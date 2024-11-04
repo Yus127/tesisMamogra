@@ -20,12 +20,22 @@ from open_clip import create_model_from_pretrained, get_tokenizer # works on ope
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-#print(dir(model))
+#print(dir(tokenizer))
+#print(model.named_modules())
+print(tokenizer.context_length)
 #print(model.encode_image)
-#print("E")
 #print(model.encode_image(torch.randn(1, 3, 224, 224)))
-lightning_model = LightningBiomedCLIP(model)
-print(lightning_model.model)
+#lightning_model = LightningBiomedCLIP(model, tokenizer)
+
+lightning_model = LightningBiomedCLIP(
+    model=model,
+    tokenizer=tokenizer,
+    clip_hidden_size=224,  # Should match your CLIP model's hidden size
+    #vocab_size=256,  # Use your tokenizer's vocab size
+    #max_seq_length=256,    # Should match your tokenizer's max sequence length
+    hidden_size=512
+)
+#print(lightning_model.model)
 
 # Initialize tokenizer
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
@@ -38,8 +48,13 @@ dataset = ComplexMedicalDataset(
 )
 print(dataset)
 print("dataset")
-# Verify dataset loading by checking a sample
-print(f"Sample from dataset: {dataset[4]}")
+
+#print(f"Sample from dataset: {dataset[4]}")
+
+if torch.any(dataset[4]["image"] != 0):
+    print("Tensor contains non-zero values.")
+else:
+    print("Tensor is full of zeros.")
 
 # Create DataLoader
 dataloader = DataLoader(
@@ -56,7 +71,8 @@ trainer = pl.Trainer(
     devices=config_pl.DEVICES,
     min_epochs=1,
     max_epochs=config_pl.NUM_EPOCHS,
-    precision=config_pl.PRECISION
+    precision=config_pl.PRECISION,
+    log_every_n_steps = 1
     #callbacks =[MyPrintingCallback(), EarlyStopping(monitor="val_loss")]
 ) #num_nodes
 #trainer.tune, find the hpyerparameters

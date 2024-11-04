@@ -33,31 +33,7 @@ class ComplexMedicalDataset(Dataset):
     
     def process_image(self, image_path):
         print("Preporcess-image")
-        """Process individual images"""
         try:
-            """
-            print(f"Processing image path: {image_path}, type: {type(image_path)}")
-            img = Image.open(os.path.join(self.data_dir, image_path)).convert('RGB')
-            print(f"Loaded image type: {type(img)}")
-            
-            if self.processor:
-                processed_img = self.processor(img)
-                print(f"Processor output type: {type(processed_img)}")
-                if isinstance(processed_img, dict):
-                    processed_img = processed_img['pixel_values'].squeeze(0)
-            else:
-                transform = transforms.Compose([
-                    transforms.Resize((224, 224)),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                      std=[0.229, 0.224, 0.225])
-                ])
-                processed_img = transform(img)
-            
-            print(f"Final processed image type: {type(processed_img)}")
-            print(f"Final processed image shape: {processed_img.shape}")
-            return processed_img
-            """
             img = Image.open(os.path.join(self.data_dir, image_path)).convert('RGB')
             #print(img)
             
@@ -91,8 +67,7 @@ class ComplexMedicalDataset(Dataset):
     def __getitem__(self, idx: int) -> dict:
         print("get item")
         item = self.data[idx]
-        #print("Item")
-        #print(item)
+     
         a = list(item.keys())[0]
 
         # Process images
@@ -100,7 +75,6 @@ class ComplexMedicalDataset(Dataset):
         images = []
         for img_path in item[a]['image_paths']:
             processed_img = self.process_image(img_path)
-            #print("the preprocesed image is ")
             #print(processed_img.size())
             images.append(processed_img)
 
@@ -113,7 +87,6 @@ class ComplexMedicalDataset(Dataset):
 
         # Process text using BiomedCLIP's text processor
         device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-        #print(item[a]['report'])
         text = self.tokenizer(item[a]['report']).to(device)
         #print(text)
         
@@ -122,25 +95,7 @@ class ComplexMedicalDataset(Dataset):
             "text": text
         }
 
-    """
-    @staticmethod
-    def collate_fn(batch):
-       
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        
-        # Stack images - this will create a batch dimension
-        images = torch.stack([item['image'] for item in batch]).to(device)
-        print(f"Batched images shape: {images.shape}")  # Should be [B, 4, 3, 224, 224]
-        
-        # Stack text tensors
-        texts = torch.stack([item['text'] for item in batch]).to(device)
-        print(f"Batched texts shape: {texts.shape}")
-        
-        return {
-            'image': images,
-            'text': texts
-        }
-    """
+
 
     @staticmethod
     def collate_fn(batch):
@@ -153,12 +108,12 @@ class ComplexMedicalDataset(Dataset):
         
         for item in batch:
             # Handle each image in the batch
-            for img in item['image']:  # [N, 3, 224, 224]
+            for img in item['image']:  
                 all_images.append(img)
             all_texts.append(item['text'])
         
         # Stack all images
-        images = torch.stack(all_images).to(device)  # [B*N, 3, 224, 224]
+        images = torch.stack(all_images).to(device)  
         texts = torch.stack(all_texts)
         texts=texts.squeeze(1)
         texts.to(device)
