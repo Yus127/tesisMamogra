@@ -4,25 +4,22 @@ import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader
 from transformers import AdamW
 from PIL import Image
-import os
-import json
-import pandas as pd
-import numpy as np
+
+
 import nrrd
 from torchvision import transforms
 from typing import List, Optional
-from transformers import TrainingArguments, Trainer
+
 from model_pl import LightningBiomedCLIP
-from dataset_pl import ComplexMedicalDataset, MyDatamodule
+from dataset_pl import ComplexMedicalDataset
 import config_pl
 
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-print(dir(tokenizer))
+#print(dir(tokenizer))
 #print(model.named_modules())
-print(tokenizer.context_length)
 #print(model.encode_image)
 #print(model.encode_image(torch.randn(1, 3, 224, 224)))
 #lightning_model = LightningBiomedCLIP(model, tokenizer)
@@ -30,8 +27,8 @@ print(tokenizer.context_length)
 lightning_model = LightningBiomedCLIP(
     model=model,
     tokenizer=tokenizer,
-    clip_hidden_size=224,  # Should match your CLIP model's hidden size
-    #vocab_size=256,  # Use your tokenizer's vocab size
+    #clip_hidden_size=28895,  # Should match your CLIP model's hidden size
+    #vocab_size=28895,  # Use your tokenizer's vocab size
     #max_seq_length=256,    # Should match your tokenizer's max sequence length
     hidden_size=224
 )

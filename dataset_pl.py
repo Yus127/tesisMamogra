@@ -32,7 +32,6 @@ class ComplexMedicalDataset(Dataset):
     
     
     def process_image(self, image_path):
-        print("Preporcess-image")
         try:
             img = Image.open(os.path.join(self.data_dir, image_path)).convert('RGB')
             #print(img)
@@ -44,7 +43,6 @@ class ComplexMedicalDataset(Dataset):
                     #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                 ])
             processed_img = transform(img)
-            #print("the size of ")
             if processed_img.dim() == 3:
                 processed_img = processed_img.unsqueeze(0)
             
@@ -65,7 +63,6 @@ class ComplexMedicalDataset(Dataset):
 
 
     def __getitem__(self, idx: int) -> dict:
-        print("get item")
         item = self.data[idx]
      
         a = list(item.keys())[0]
@@ -82,13 +79,12 @@ class ComplexMedicalDataset(Dataset):
         images = torch.stack(images)  # [N, 3, 224, 224]
         images = images.squeeze(1) 
 
-        print("final images size")
-        print(images.size())
+        #print("final images size")
+        #print(images.size())
 
         # Process text using BiomedCLIP's text processor
         device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
         text = self.tokenizer(item[a]['report']).to(device)
-        #print(text)
         
         return {
             "image": images,
@@ -99,7 +95,6 @@ class ComplexMedicalDataset(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        print("collate")
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         
         # Extract and process images
@@ -118,8 +113,8 @@ class ComplexMedicalDataset(Dataset):
         texts=texts.squeeze(1)
         texts.to(device)
         
-        print(f"Final batch image shape: {images.shape}")
-        print(f"Final batch text shape: {texts.shape}")
+        #print(f"Final batch image shape: {images.shape}")
+        #print(f"Final batch text shape: {texts.shape}")
         
         return {
             'image': images,
