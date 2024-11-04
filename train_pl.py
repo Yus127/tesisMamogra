@@ -20,7 +20,7 @@ from open_clip import create_model_from_pretrained, get_tokenizer # works on ope
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-#print(dir(tokenizer))
+print(dir(tokenizer))
 #print(model.named_modules())
 print(tokenizer.context_length)
 #print(model.encode_image)
@@ -33,7 +33,7 @@ lightning_model = LightningBiomedCLIP(
     clip_hidden_size=224,  # Should match your CLIP model's hidden size
     #vocab_size=256,  # Use your tokenizer's vocab size
     #max_seq_length=256,    # Should match your tokenizer's max sequence length
-    hidden_size=512
+    hidden_size=224
 )
 #print(lightning_model.model)
 
