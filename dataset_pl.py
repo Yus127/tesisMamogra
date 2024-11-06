@@ -34,13 +34,11 @@ class ComplexMedicalDataset(Dataset):
     def process_image(self, image_path):
         try:
             img = Image.open(os.path.join(self.data_dir, image_path)).convert('RGB')
-            #print(img)
-            
+
 
             transform = transforms.Compose([
                     transforms.Resize((224, 224)),
                     transforms.ToTensor(),
-                    #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                 ])
             processed_img = transform(img)
             if processed_img.dim() == 3:
@@ -50,11 +48,8 @@ class ComplexMedicalDataset(Dataset):
 
             # Use processor's image processing
             
-            processed_img = processed_img.to(device)  # Move to correct device
-            #print(processed_img.size())
-            # todo check if we dont include the encode_image here    
-            #processed = self.processor.encode_image(processed_img)
-            #print(processed.size())
+            processed_img = processed_img.to(device)  
+     
             return processed_img
 
         except Exception as e:

@@ -19,17 +19,16 @@ tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_p
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 #print(dir(tokenizer))
-#print(model.named_modules())
-#print(model.encode_image)
-#print(model.encode_image(torch.randn(1, 3, 224, 224)))
-#lightning_model = LightningBiomedCLIP(model, tokenizer)
+
 
 lightning_model = LightningBiomedCLIP(
     model=model,
     tokenizer=tokenizer,
-    #clip_hidden_size=28895,  # Should match your CLIP model's hidden size
-    #vocab_size=28895,  # Use your tokenizer's vocab size
-    #max_seq_length=256,    # Should match your tokenizer's max sequence length
+    vocab_size=28895,
+    max_length=64,
+    bos_token_id=2,  # Adjust these token IDs based on your tokenizer
+    eos_token_id=3,
+    pad_token_id=0,
     hidden_size=224
 )
 #print(lightning_model.model)
@@ -70,9 +69,9 @@ trainer = pl.Trainer(
     max_epochs=config_pl.NUM_EPOCHS,
     precision=config_pl.PRECISION,
     log_every_n_steps = 1
-    #callbacks =[MyPrintingCallback(), EarlyStopping(monitor="val_loss")]
-) #num_nodes
+) 
 #trainer.tune, find the hpyerparameters
+
 trainer.fit(lightning_model, dataloader)
 #trainer.validate(model, dm)
 #trainer.test(model, dm)
