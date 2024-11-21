@@ -5,34 +5,49 @@ from torchmetrics.text import BLEUScore
 from transformers import get_linear_schedule_with_warmup
 import torch.nn.functional as F
 
+"""
+Text generation or image-captioning model using a pretrained CLIP model as a base 
+for extracting image features, and adding a custom captioning head for generating 
+text descriptions based on those features
+"""
+
 class CaptioningHead(nn.Module):
-    def __init__(self, clip_hidden_size: int = 512, vocab_size: int = 28895, hidden_size: int = 512):
+    def __init__(self, clip_hidden_size: int, vocab_size: int, hidden_size: int ):
         super().__init__()
         self.dense = nn.Linear(clip_hidden_size, hidden_size)
         self.dropout = nn.Dropout(0.1)
         self.out_proj = nn.Linear(hidden_size, vocab_size)
         
     def forward(self, features):
-        x = self.dropout(self.dense(features))
+        x = self.dense(features)
+        #x = self.dropout(self.dense(features))
         x = self.out_proj(x)
         return x
-
+"""    
+class MaskProcessor(nn.Module):
+    def __init__(self, in_channels: int = 4):  # 4 channels (RGB + mask)
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, 3, kernel_size=1)  # Convert to 3 channels
+        
+    def forward(self, x):
+        # x shape: [batch_size, 4, height, width]
+        return self.conv(x)
+"""
 class LightningBiomedCLIP(pl.LightningModule):
     def __init__(
         self,
         model,
         tokenizer,
-        clip_hidden_size: int = 512,
-        learning_rate: float = 2e-5,
-        weight_decay: float = 0.01,
-        warmup_steps: int = 1000,
-        max_epochs: int = 10,
-        hidden_size: int = 512,
-        vocab_size: int = 28895,
-        max_length: int = 64,  
-        bos_token_id: int = 101, 
-        eos_token_id: int = 102,  
-        pad_token_id: int = 0,   
+        clip_hidden_size: int,
+        learning_rate: float,
+        weight_decay: float,
+        warmup_steps: int,
+        hidden_size: int,
+        vocab_size: int,
+        max_length: int,  
+        bos_token_id: int, 
+        eos_token_id: int,  
+        pad_token_id: int   
     ):
         super(LightningBiomedCLIP, self).__init__()
         self.save_hyperparameters(ignore=['model', 'tokenizer'])
@@ -60,7 +75,13 @@ class LightningBiomedCLIP(pl.LightningModule):
         self.bleu = BLEUScore()
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id)  # Assuming 0 is padding token
-    
+    """
+    def process_image(self, images):
+        #Process images with or without mask
+        if self.use_mask_processor and images.size(1) == 4:  # If image has mask channel
+            return self.mask_processor(images)
+        return images # Return original image if no mask or mask processing needed
+    """
     def forward(self, images, texts=None):
         # Get image features from CLIP
         image_features, _, _ = self.model(images, texts)
@@ -128,11 +149,8 @@ class LightningBiomedCLIP(pl.LightningModule):
             pred_text = self.decode_tokens(generated_seqs[i])
             pred_texts.append(pred_text)
 
-
-
         bleu_score = self.bleu(pred_texts, [true_texts])
 
-        
 
         # Combined loss (weighted sum)
         loss = ce_loss - 0.1 * bleu_score  # Negative because we want to maximize BLEU
@@ -145,7 +163,7 @@ class LightningBiomedCLIP(pl.LightningModule):
         if batch_idx % 100 == 0:
             print("\nTraining Examples:")
             for i in range(min(2, len(true_texts))):
-                print(f"\nTrue text: {true_texts[i]}")
+                #print(f"\nTrue text: {true_texts[i]}")
                 print(f"Generated text: {pred_texts[i]}")
                 print(f"BLEU score: {bleu_score:.4f}")
         
@@ -172,7 +190,6 @@ class LightningBiomedCLIP(pl.LightningModule):
             pred_texts.append(pred_text)
         
         # Calculate BLEU score
-      
 
         bleu_score = self.bleu(pred_texts, [[text] for text in true_texts])
         
@@ -192,7 +209,7 @@ class LightningBiomedCLIP(pl.LightningModule):
             print("\nValidation Examples:")
             for i in range(min(3, len(true_texts))):
                 #print(f"\nTrue text: {true_texts[i]}")
-                #print(f"Generated text: {pred_texts[i]}")
+                print(f"Generated text: {pred_texts[i]}")
                 print(f"BLEU score: {bleu_score:.4f}")
         
         return loss
@@ -222,7 +239,7 @@ class LightningBiomedCLIP(pl.LightningModule):
         for _ in range(max_length - 1):
             # Get logits from the caption head
             with torch.no_grad():
-                logits = self.caption_head(image_features)  # [batch_size, vocab_size]
+                logits = self.caption_head(image_features)  
                 
                 # Apply temperature
                 logits = logits / temperature
