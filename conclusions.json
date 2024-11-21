@@ -1,0 +1,1322 @@
+[
+    {
+        "S0001119_2014": {
+            "image_paths": [
+                "images/originals/S0001119_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast, new amorphous calcifications are identified.BI RADS 4B Category.The finding is of moderate suspicion of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0031817_2015": {
+            "image_paths": [
+                "images/originals/S0031817_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "In the left breast there is an asymmetry that suggests by ultrasound corresponds an area of ​​focal fibrochistic changes.Right axillary nodes with discreetly hypoechoic cortex.Bi Rads 3 category.The findings are probably benign 98 99.Control study with CC projection of the left breast bilateral ultrasound is suggested."
+        }
+    },
+    {
+        "S0041289_2015": {
+            "image_paths": [
+                "images/originals/S0041289_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "In the left breast a simple dominant cyst that is palpable is described.In both breasts groups of calcifications that are probably benign 98 99 are described.Bi Rads 3 category.It is recommended to perform bilateral in 6 months to assess the stability of the findings described."
+        }
+    },
+    {
+        "S0003246_2015": {
+            "image_paths": [
+                "images/originals/S0003246_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Multiple calcifications of indeterminate appearance are identified in the left breast.Bi Rads 5 category.The findings are high suspicious of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0003323_2015": {
+            "image_paths": [
+                "images/originals/S0003323_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0003603_2015": {
+            "image_paths": [
+                "images/originals/S0003603_2015_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "Category BI RADS 5.In the left breast a highly suggestive palpable mass of malignancy with abnormal axillary ganglia is visualized.Both findings merit biopsy.In the right breast there are also vascular dispersed calcifications in the CSE there are some linear that are most likely of vascular origin, it is recommended to make magnificent projections in 6 months to assess its stability."
+        }
+    },
+    {
+        "S0003855_2015": {
+            "image_paths": [
+                "images/originals/S0003855_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category Birads 1: Study is negative for malignancy.In the absence of palpable findings it is recommended to perform annual routine mammography."
+        }
+    },
+    {
+        "S0004559_2015": {
+            "image_paths": [
+                "images/originals/S0004559_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left axillary region a lymph node is identified with the discreetly greased cortex that suggests being reagent.Bi Rads 3 category.The findings are probably benign 98 99.It is recommended to perform control ultrasound in 3 6 months."
+        }
+    },
+    {
+        "S0004981_2015": {
+            "image_paths": [
+                "images/originals/S0004981_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast an asymmetry seen in a single projection in the ultrasound There is an area of ​​associated hypoechoic tissue microquystems prominent ducts.Bi Rads 3 category.The findings are probably benign 98 99.It is recommended to make an oblique projection of the left breast bilateral ultrasound in 6 months to assess stability."
+        }
+    },
+    {
+        "S0005878_2015": {
+            "image_paths": [
+                "images/originals/S0005878_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Solid nodule in the probably benign right breast 98 99.Category BI RADS 3: It is recommended to carry out control study in 6 months to assess stability."
+        }
+    },
+    {
+        "S0006159_2015": {
+            "image_paths": [
+                "images/originals/S0006159_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.Negative study for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0008781_2015": {
+            "image_paths": [
+                "images/originals/S0008781_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Several nodules of benign appearance are described in both breasts.They are better seen with volumes.Category BI RADS 3: The findings are probably benign 98 99 However, in the absence of previous studies to compare considering the family risk factor, narrow control is recommended in 6 months to assess stability a mammography projection."
+        }
+    },
+    {
+        "S0008817_2015": {
+            "image_paths": [
+                "images/originals/S0008817_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0009325_2015": {
+            "image_paths": [
+                "images/originals/S0009325_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "3 solid nodules that are probably considered benign 98 are described in the right breast.Category Birads 3: It is recommended to perform a control ultrasound in 6 months to assess stability."
+        }
+    },
+    {
+        "S0009681_2015": {
+            "image_paths": [
+                "images/originals/S0009681_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "In the right breast a focal zone of hypoechoic tissue that suggests adenosine fibrosis is described as a newly benign new finding 98 99.Benign calcifications are described in the left breast.Category BI RADS 3: It is recommended to perform right breast control ultrasound in 6 months to assess the stability of the described finding."
+        }
+    },
+    {
+        "S0011473_2015": {
+            "image_paths": [
+                "images/originals/S0011473_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral solid nodules.Category BI RADS 3: The findings are probably benign 98 99.It is recommended to perform control ultrasound in 6 months."
+        }
+    },
+    {
+        "S0014004_2015": {
+            "image_paths": [
+                "images/originals/S0014004_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.Study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0014363_2015": {
+            "image_paths": [
+                "images/originals/S0014363_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there are 2 solid nodules One is new.bilateral fibrochistic changes.Bi Rads 3 category.The findings are probably benign 98 99.Ultrasound control is suggested in 6 months to assess stability of the findings described."
+        }
+    },
+    {
+        "S0014490_2015": {
+            "image_paths": [
+                "images/originals/S0014490_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category BI RADS 5.In the left breast there is a solid spiculated nodule already biopsied with malignancy report in this same quadrant there are 2 areas of indeterminate hypoechoic tissue that suggest multifocal disease."
+        }
+    },
+    {
+        "S0015385_2015": {
+            "image_paths": [
+                "images/originals/S0015385_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Category BI RADS 5.Palpable mass in the right breast with high suspicion Mustaistic axillary malignancy.Biopsy is recommended."
+        }
+    },
+    {
+        "S0016403_2015": {
+            "image_paths": [
+                "images/originals/S0016403_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast a focal asymmetry is identified that in the ultrasound coincides with an island of echogenic tissue.In this same breast an area of ​​non -palpable avascular hypochic tissue is observed.Bi Rads 3 category.The findings are probably benign 98 99.It is recommended to perform control ultrasound in 6 MSE."
+        }
+    },
+    {
+        "S0016732_2015": {
+            "image_paths": [
+                "images/originals/S0016732_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there are 2 spiculated solid nodules that are palpable as well as pleomorphic calcifications.Bi Rads 5 category.The findings are high suspicion of malignancy.The biopsy must be considered."
+        }
+    },
+    {
+        "S0017823_2015": {
+            "image_paths": [
+                "images/originals/S0017823_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there is a focal asymmetry.Bi Rads 3 category.The findings are probably benign 98 99.Control with conventional projections of the right breast is suggested in 6 months to assess the stability of the described findings."
+        }
+    },
+    {
+        "S0019267_2015": {
+            "image_paths": [
+                "images/originals/S0019267_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0019566_2015": {
+            "image_paths": [
+                "images/originals/S0019566_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Negative study category Birads 1: Negative study for malignancy.In the absence of symptoms risk factors are recommended to perform scrutiny mammography in 1 2 years."
+        }
+    },
+    {
+        "S0020728_2015": {
+            "image_paths": [
+                "images/originals/S0020728_2015_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "In the left breast an irregular nodule with distortion is palpable is considered high suspicion for malignancy.BI RADS 4C Category: The finding merits biopsy."
+        }
+    },
+    {
+        "S0021337_2015": {
+            "image_paths": [
+                "images/originals/S0021337_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Moderate fibrochistic changes are described.In the right breast a focal zone of adjacent fibrosis is identified the surgical scar that discreetly increases its size.Category BI RADS 3: The findings are probably benign 98 99 an ultrasound of control in 6 months to assess stability is recommended."
+        }
+    },
+    {
+        "S0022209_2015": {
+            "image_paths": [
+                "images/originals/S0022209_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography ultrasound is negative for malignancy.In the absence of clinical findings it is recommended to perform routine mammography every 1 2 years until they are 40 years later the routine is annual."
+        }
+    },
+    {
+        "S0023333_2015": {
+            "image_paths": [
+                "images/originals/S0023333_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Category BI RADS 4A.In the left breast there is a solid micro -theobed nodule with low suspicion of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0024091_2015": {
+            "image_paths": [
+                "images/originals/S0024091_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0026225_2015": {
+            "image_paths": [
+                "images/originals/S0026225_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0027734_2015": {
+            "image_paths": [
+                "images/originals/S0027734_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "A palpable mass with architecture distortion is observed in the left breast in addition to a group of ipsilateral axillary calcifications.Bi Rads 5 category.The findings described are high suspicion of malignancy.Biopsy is recommended."
+        }
+    },
+    {
+        "S0028246_2015": {
+            "image_paths": [
+                "images/originals/S0028246_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "In the right breast there is a palpable zone that suggests fat necrosis a new solid nodule.Bi Rads 3 category.It is recommended to perform control ultrasound in six months to assess stability."
+        }
+    },
+    {
+        "S0031273_2015": {
+            "image_paths": [
+                "images/originals/S0031273_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography is considered negative for malignancy.In the absence of clinical findings, annual routine mammography is recommended."
+        }
+    },
+    {
+        "S0032601_2015": {
+            "image_paths": [
+                "images/originals/S0032601_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography ultrasound are negative for malignancy.In the absence of clinical findings it is recommended to continue with annual routine studies."
+        }
+    },
+    {
+        "S0033553_2015": {
+            "image_paths": [
+                "images/originals/S0033553_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Negative study for malignancy.Annual routine study is suggested."
+        }
+    },
+    {
+        "S0035088_2015": {
+            "image_paths": [
+                "images/originals/S0035088_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Group of calcifications in the left breast probably benign 98 99.Bi Rads 3 category.It is recommended to conduct control in 6 months to assess stability."
+        }
+    },
+    {
+        "S0035447_2015": {
+            "image_paths": [
+                "images/originals/S0035447_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast there is an irregular mass with angular margins pleomorphic calcifications.Bi Rads 5 category.The described finding is highly suggestive of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0036600_2015": {
+            "image_paths": [
+                "images/originals/S0036600_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "A palpable mass with moderate suspicion of malignancy is identified.BI RADS 4B Category.It is recommended to perform biopsy of the finding described in the right breast."
+        }
+    },
+    {
+        "S0037259_2015": {
+            "image_paths": [
+                "images/originals/S0037259_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography ultrasound are negative for malignancy.In the absence of new clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0037515_2015": {
+            "image_paths": [
+                "images/originals/S0037515_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there is a solid nodule that has remained stable for 4 months.fibrochistic changes.Bi Rads 3 category.The findings are probably benign 98 99.Control study in 6 months is suggested to assess stability."
+        }
+    },
+    {
+        "S0038286_2015": {
+            "image_paths": [
+                "images/originals/S0038286_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "uniform calcifications grouped in the right breast.bilateral fibrochistic changes.Category BI RADS 3: Magnificent projections of the right breast are suggested in 6 months to assess stability of the findings described."
+        }
+    },
+    {
+        "S0039689_2015": {
+            "image_paths": [
+                "images/originals/S0039689_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign The study is negative for malignancy.In the absence of clinical findings it is recommended to continue with annual routine studies."
+        }
+    },
+    {
+        "S0041389_2015": {
+            "image_paths": [
+                "images/originals/S0041389_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0042072_2015": {
+            "image_paths": [
+                "images/originals/S0042072_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign calcifications minimum bilateral fibrochistic changes.Palpable fibrous ring in the right breast.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of new clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0042687_2015": {
+            "image_paths": [
+                "images/originals/S0042687_2015_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "In the right breast an area of ​​non -palpable avascular hypochic tissue is identified.fibrochistic changes in both breasts.Category BI RADS 3: The findings are probably benign 98 99.It is recommended to perform control ultrasound in 6 months to assess stability."
+        }
+    },
+    {
+        "S0043037_2015": {
+            "image_paths": [
+                "images/originals/S0043037_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there is a palpable irregular solid nodule as well as an abnormal ipsilateral axillary ganglion.Bi Rads 5 category.The findings are high suspicion of malignancy The biopsy must be considered."
+        }
+    },
+    {
+        "S0043519_2015": {
+            "image_paths": [
+                "images/originals/S0043519_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Mammography is considered negative for malignancy.Category BI RADS 1: In the absence of clinical changes Risk factors is recommended annual scrutiny mammography."
+        }
+    },
+    {
+        "S0047101_2015": {
+            "image_paths": [
+                "images/originals/S0047101_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral flowery fibrochistic changes.In the right breast there is a fabric area.Bi Rads 3 category.The findings are probably benign 98 99.Ultrasound control study is suggested in 6 months to assess stability of the described findings."
+        }
+    },
+    {
+        "S0048199_2015": {
+            "image_paths": [
+                "images/originals/S0048199_2015_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "In the left axillary region there is an inclusion cyst.Bi Rads 2 category.The findings are benign.The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0050579_2015": {
+            "image_paths": [
+                "images/originals/S0050579_2015_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes Solid nodules in the left breast probably benign 98 99.Category BI RADS 3: It is recommended to carry out control study in 6 months to assess stability."
+        }
+    },
+    {
+        "S0000399_2014": {
+            "image_paths": [
+                "images/originals/S0000399_2014_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "In the right breast there are 4 spiculated solid nodules as well as 2 abnormal ipsilateral axillary ganglia.In the left axillary region there is a ganglion with the 3 mm cortex.Bi Rads 5 category.The findings are high suspicion of malignancy The biopsy must be considered."
+        }
+    },
+    {
+        "S0000772_2014": {
+            "image_paths": [
+                "images/originals/S0000772_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography ultrasound are negative for malignancy.In the absence of new clinical findings, routine studies are recommended to carry out the routine is annual later."
+        }
+    },
+    {
+        "S0001616_2014": {
+            "image_paths": [
+                "images/originals/S0001616_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign.Mammography ultrasound are negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0006055_2014": {
+            "image_paths": [
+                "images/originals/S0006055_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Solid nodule in the left breast probably benign 98 99.Bi Rads 3 category.It is recommended to conduct control in 6 months to assess stability."
+        }
+    },
+    {
+        "S0006417_2014": {
+            "image_paths": [
+                "images/originals/S0006417_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category BI RADS 1: Negative study for malignancy.In the absence of clinical changes, risk factors are recommended."
+        }
+    },
+    {
+        "S0007272_2014": {
+            "image_paths": [
+                "images/originals/S0007272_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast an area of ​​palpable hypoechoic tissue is identified with increased vascularity.Bi Rads 4A category.the findings of low suspicion of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0007570_2014": {
+            "image_paths": [
+                "images/originals/S0007570_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography is negative for malignancy.In the absence of clinical findings, annual routine mammography is recommended."
+        }
+    },
+    {
+        "S0013284_2014": {
+            "image_paths": [
+                "images/originals/S0013284_2014_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Solid nodules in the right breast probably benign 98 99.Category BI RADS 3: It is recommended to carry out control study in 6 months to assess stability of the findings described."
+        }
+    },
+    {
+        "S0013312_2014": {
+            "image_paths": [
+                "images/originals/S0013312_2014_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Fibrochistic changes of predominance in left breast.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0014851_2014": {
+            "image_paths": [
+                "images/originals/S0014851_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0015880_2014": {
+            "image_paths": [
+                "images/originals/S0015880_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "A new modular asymmetry in the CSE is described in the left breast.Bilateral discrete fibrochistic changes.Birads 3 category: The finding is probably benign 98.It is recommended to follow up 6 months with a magnified projection of left mammography to assess stability."
+        }
+    },
+    {
+        "S0021173_2014": {
+            "image_paths": [
+                "images/originals/S0021173_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign.The study is negative for malignancy.In the absence of palpable findings it is recommended to perform annual routine mammography."
+        }
+    },
+    {
+        "S0023646_2014": {
+            "image_paths": [
+                "images/originals/S0023646_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.The study is negative for malignancy.In the absence of palpable findings it is recommended to perform routine mammography every 1 2 years."
+        }
+    },
+    {
+        "S0026084_2014": {
+            "image_paths": [
+                "images/originals/S0026084_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Solid nodule in left breast that for its stability of 2 years is considered benign.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine mammography is suggested."
+        }
+    },
+    {
+        "S0027471_2014": {
+            "image_paths": [
+                "images/originals/S0027471_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.Annual routine study is recommended."
+        }
+    },
+    {
+        "S0029969_2014": {
+            "image_paths": [
+                "images/originals/S0029969_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "2 palpable distortion zones with suspected malignancy are identified in the right breast.Benign solid nodule in the Izuqierda breast.Bi Rads 4 category.It is recommended to perform biopsy of the finding described in the right breast."
+        }
+    },
+    {
+        "S0030741_2014": {
+            "image_paths": [
+                "images/originals/S0030741_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "In the right breast a palpable mass with high suspicion of malignancy is identified.In each breast there is a solid nodule that is considered undetermined.Category BI RADS 5: It is recommended to perform biopsy of all the findings described."
+        }
+    },
+    {
+        "S0034406_2014": {
+            "image_paths": [
+                "images/originals/S0034406_2014_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "Normal breast.Category BI RADS 1: Study is negative for malignancy.In the absence of palpable findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0034474_2014": {
+            "image_paths": [
+                "images/originals/S0034474_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.Study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0036089_2014": {
+            "image_paths": [
+                "images/originals/S0036089_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.In the left breast there are that they suggest being an in hyalinization.Category BI RADS 2: The findings are benign The study is negative for malignancy.In the absence of palpable findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0038580_2014": {
+            "image_paths": [
+                "images/originals/S0038580_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Two solid nodules of stable benign appearance 1 anus are described in the left breast.Minimum fibrochistic changes.Category BI RADS 2: The findings are considered benign.In the absence of clinical changes, annual scrutiny mammography is recommended."
+        }
+    },
+    {
+        "S0040157_2014": {
+            "image_paths": [
+                "images/originals/S0040157_2014_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.Category BI RADS 2: The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0040751_2014": {
+            "image_paths": [
+                "images/originals/S0040751_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category BI RADS 5: Solid nodules spiculated in the right breast in different quadrants with high suspicion of malignancy.Axillary thickening of the skin is associated.Biopsy is recommended.Magnetic resonance should be considered."
+        }
+    },
+    {
+        "S0040821_2014": {
+            "image_paths": [
+                "images/originals/S0040821_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Mammogram Ultrasound are considered negative for malignancy.Bi Rads 1 category.In the absence of clinical findings it is recommended to continue with an annual routine study."
+        }
+    },
+    {
+        "S0041666_2014": {
+            "image_paths": [
+                "images/originals/S0041666_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category Bi Rads 1: The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0043337_2014": {
+            "image_paths": [
+                "images/originals/S0043337_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign calcifications are observed in the right breast, focal fibrochistic changes.In the left breast there are minimal fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0043543_2014": {
+            "image_paths": [
+                "images/originals/S0043543_2014_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral minimum fibrochistic changes.It is commented that in the referred area of ​​the right breast internal upper quadrant there are no relevant findings which suggests that the mastitis picture was resolved without complications.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0043623_2014": {
+            "image_paths": [
+                "images/originals/S0043623_2014_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "In the right breast a solid nodule is identified that is probably benign 98 99.Bi Rads 3 category.It is recommended to perform control ultrasound in 6 months to assess stability."
+        }
+    },
+    {
+        "S0045109_2014": {
+            "image_paths": [
+                "images/originals/S0045109_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral fibrochistic changes.Bi Rads 2 category.The findings are benign.The study is negative for malignancy.In the absence of risk factors for clinical findings, annual routine study is suggested."
+        }
+    },
+    {
+        "S0046262_2014": {
+            "image_paths": [
+                "images/originals/S0046262_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign solid nodule in the right breast.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0046510_2014": {
+            "image_paths": [
+                "images/originals/S0046510_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category Bi Rads 2: The findings are benign The study is negative for malignancy.In the absence of clinical findings it is recommended to continue with both annual routine studies."
+        }
+    },
+    {
+        "S0048299_2014": {
+            "image_paths": [
+                "images/originals/S0048299_2014_LCC.tif"
+            ],
+            "mask_paths": [
+                "LCC.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign.The study is negative for malignancy.In the absence of palpable findings it is recommended to perform annual routine mammography."
+        }
+    },
+    {
+        "S0049442_2014": {
+            "image_paths": [
+                "images/originals/S0049442_2014_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Normal negative study for malignancy.In the absence of clinical findings it is recommended to continue with annual routine mammography."
+        }
+    },
+    {
+        "S0002229_2016": {
+            "image_paths": [
+                "images/originals/S0002229_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral solid nodules that are probably benign 98 99.Category BI RADS 3: In the absence of previous studies to compare it is recommended control ultrasound in 6 months to assess stability of the nodules described."
+        }
+    },
+    {
+        "S0002272_2016": {
+            "image_paths": [
+                "images/originals/S0002272_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast a conglomerate of microquystems is described as a probably benign discovery 98.Category BI RADS 3: It is recommended to perform a control ultrasound in 6 months to assess stability."
+        }
+    },
+    {
+        "S0002473_2016": {
+            "image_paths": [
+                "images/originals/S0002473_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Category BI RADS 5.Associated Spiculate Solid Solid Nodule Distortion of Architecture in the Right Breast highly suggestive of malignancy.Biopsy is recommended."
+        }
+    },
+    {
+        "S0002921_2016": {
+            "image_paths": [
+                "images/originals/S0002921_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine mammography is recommended."
+        }
+    },
+    {
+        "S0005957_2016": {
+            "image_paths": [
+                "images/originals/S0005957_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Fibrochistic changes in left breast.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0006185_2016": {
+            "image_paths": [
+                "images/originals/S0006185_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Unique dilated duct in the right breast with an intraductal solid nodule that suggests corresponding to a papilloma.Bi Rads 4A category.The finding is of low suspicion of malignancy.Excisional biopsy is recommended."
+        }
+    },
+    {
+        "S0007919_2016": {
+            "image_paths": [
+                "images/originals/S0007919_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category BI RADS 1: Studies are negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0010064_2016": {
+            "image_paths": [
+                "images/originals/S0010064_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Negative study for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0012918_2016": {
+            "image_paths": [
+                "images/originals/S0012918_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category BI RADS 2.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0014292_2016": {
+            "image_paths": [
+                "images/originals/S0014292_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Mammography is negative for malignancy.In the absence of clinical findings, annual routine mammography is recommended."
+        }
+    },
+    {
+        "S0016030_2016": {
+            "image_paths": [
+                "images/originals/S0016030_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Category BI RADS 5.Solid nodule spiculate in the right breast with high suspicion of malignancy.Biopsy is recommended."
+        }
+    },
+    {
+        "S0018868_2016": {
+            "image_paths": [
+                "images/originals/S0018868_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left axillary extension an asymmetry visits only in the oblique projection.Minimum fibrochistic changes.Bi Rads 3 category.The findings are probably benign 98 99.It is recommended to make an oblique projection of the left breast in 6 months to assess stability."
+        }
+    },
+    {
+        "S0019232_2016": {
+            "image_paths": [
+                "images/originals/S0019232_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the left breast there is a poorly defined palpable mass as well as abnormal ipsilateral axillary ganglia.Bi Rads 5 category.The findings are high suspicion of malignancy.The biopsy must be considered."
+        }
+    },
+    {
+        "S0022617_2016": {
+            "image_paths": [
+                "images/originals/S0022617_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast an asymmetry seen in a single projection a solid nodule both findings already seen in the previous studies.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0022761_2016": {
+            "image_paths": [
+                "images/originals/S0022761_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign solid nodules in the right breast.In the left breast a new uniform calcifications are observed.Bi Rads 3 category.It is recommended to conduct control of control in 6 months of the left breast to assess stability."
+        }
+    },
+    {
+        "S0023051_2016": {
+            "image_paths": [
+                "images/originals/S0023051_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Normal negative study for malignancy.In the absence of clinical findings it is recommended to continue with annual routine mammography."
+        }
+    },
+    {
+        "S0024758_2016": {
+            "image_paths": [
+                "images/originals/S0024758_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0029288_2016": {
+            "image_paths": [
+                "images/originals/S0029288_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast there is a solid nodule that shows ductal extension although it is considered of moderate suspicion for malignancy merits biopsy.BI RADS 4B Category: Solid nodule biopsy described in the right breast is recommended."
+        }
+    },
+    {
+        "S0031160_2016": {
+            "image_paths": [
+                "images/originals/S0031160_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "An architecture distortion zone is identified in the left breast.Bi Rads 4 category.The findings are of moderate suspicion of malignancy.It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0031977_2016": {
+            "image_paths": [
+                "images/originals/S0031977_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.Studies are negative for malignancy.In the absence of clinical findings it is recommended to conduct routine studies from 40 years."
+        }
+    },
+    {
+        "S0032029_2016": {
+            "image_paths": [
+                "images/originals/S0032029_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Category BI RADS 1: The study is negative for malignancy.In the absence of clinical findings, annual routine ultrasound mammography is recommended."
+        }
+    },
+    {
+        "S0032996_2016": {
+            "image_paths": [
+                "images/originals/S0032996_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bilateral moderate fibrochistic changes.Category BI RADS 2: The described findings are benign.The study is negative for malignancy.In the absence of clinical changes it is recommended to carry out annual routine studies."
+        }
+    },
+    {
+        "S0033050_2016": {
+            "image_paths": [
+                "images/originals/S0033050_2016_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "Mass in the right breast with a diagnosis of cancer already known.In the left breast there is a mass with a high suspicion of malignancy.In the right axillary region there are 5 abnormal ganglia.Category BI RADS 5: It is recommended to perform the left breast biopsy."
+        }
+    },
+    {
+        "S0035845_2016": {
+            "image_paths": [
+                "images/originals/S0035845_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign calcifications.Bi Rads 2 category.Benign findings.Negative study for malignancy.In the absence of clinical changes, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0036300_2016": {
+            "image_paths": [
+                "images/originals/S0036300_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0037484_2016": {
+            "image_paths": [
+                "images/originals/S0037484_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bi Rads 1 category.The study is negative for malignancy.In case of persisting the clinical suspicion of primary breast disease, magnetic resonance with gadolinio can be considered."
+        }
+    },
+    {
+        "S0040463_2016": {
+            "image_paths": [
+                "images/originals/S0040463_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Focal fibrochistic changes in left breast corresponding to the palpable site.In the right breast there is a solid nodule.The findings are probably considered benign 98.Category BI RADS 3: It is recommended to perform control ultrasound in 6 months."
+        }
+    },
+    {
+        "S0041493_2016": {
+            "image_paths": [
+                "images/originals/S0041493_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Benign calcifications Minimum bilateral fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings it is recommended to continue with annual routine studies."
+        }
+    },
+    {
+        "S0043745_2016": {
+            "image_paths": [
+                "images/originals/S0043745_2016_LMLO.tif"
+            ],
+            "mask_paths": [
+                "LMLO.nrrd"
+            ],
+            "report": "New solid nodule in the probably benign left mother 98.Category BI RADS 3: It is recommended to carry out control study in 6 months to assess stability."
+        }
+    },
+    {
+        "S0044892_2016": {
+            "image_paths": [
+                "images/originals/S0044892_2016_RCC.tif"
+            ],
+            "mask_paths": [
+                "RCC.nrrd"
+            ],
+            "report": "In the right breast an asymmetry that coincides with a palpable hypochic tissue area is identified.Bi Rads 4A category.The findings are of low suspicion of malignancy.It is recommended to perform biopsy of the finding described."
+        }
+    },
+    {
+        "S0045077_2016": {
+            "image_paths": [
+                "images/originals/S0045077_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Solid nodule in the left breast probably benign 98 99.Bi Rads 3 category.It is recommended to conduct control in 6 months to assess stability."
+        }
+    },
+    {
+        "S0045657_2016": {
+            "image_paths": [
+                "images/originals/S0045657_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Bi Rads 1 category.The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0046146_2016": {
+            "image_paths": [
+                "images/originals/S0046146_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Normal breast.Category BI RADS 1: The study is negative for malignancy.In the absence of symptoms, annual routine mammography is recommended."
+        }
+    },
+    {
+        "S0046446_2016": {
+            "image_paths": [
+                "images/originals/S0046446_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "Bilateral fibrochistic changes.Bi Rads 2 category.The findings are benign The study is negative for malignancy.In the absence of clinical findings, annual routine studies are recommended."
+        }
+    },
+    {
+        "S0048960_2016": {
+            "image_paths": [
+                "images/originals/S0048960_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "The findings described in the left breast are high suspicion of malignancy.BI RADS 4C Category: It is recommended to perform biopsy."
+        }
+    },
+    {
+        "S0049612_2016": {
+            "image_paths": [
+                "images/originals/S0049612_2016_RMLO.tif"
+            ],
+            "mask_paths": [
+                "RMLO.nrrd"
+            ],
+            "report": "In the right breast, fine pleomorphic calcifications of sedentary distribution by ultrasound are described an irregular nodule palpable. The findings are highly suspicious for malignancy meriting biopsy.Category BI RADS 5: It is recommended to perform biopsy of the findings described in the right breast."
+        }
+    }
+]

@@ -38,7 +38,7 @@ tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_p
 
 # Create dataset instance
 dataset = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/",
+    data_dir="/home/yus/test/tesisMamogra/",
     processor=model,
     tokenizer=tokenizer
 )
