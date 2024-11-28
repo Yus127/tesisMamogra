@@ -6,7 +6,7 @@ LEARNING_RATE = 0.0001
 WEIGHT_DECAY = 0.01
 WARMUP_STEPS = 1000
 BATCH_SIZE = 64
-NUM_EPOCHS = 50
+NUM_EPOCHS = 5
 LEARNING_RATE = 0.001
 MAX_LENGHT = 64
 # These are according to the tokenizer
@@ -17,7 +17,7 @@ HIDDEN_SIZE = 224
 
 # Dataset
 #DATA_DIR = "dataset/"
-NUM_WORKERS = 8
+NUM_WORKERS = 19
 
 # Compute related
 ACCELERATOR = "gpu"
