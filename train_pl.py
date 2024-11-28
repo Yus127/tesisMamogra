@@ -18,7 +18,7 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 #print(dir(model))
 
 early_stop_callback = EarlyStopping(
-        monitor='val_loss',      # quantity to monitor
+        monitor='train_loss',      # quantity to monitor
         min_delta=0.00,          # minimum change to qualify as an improvement
         patience=5,              # number of epochs with no improvement after which training will be stopped
         verbose=True,            # enable verbose mode
