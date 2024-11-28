@@ -195,7 +195,7 @@ class MyDatamodule(L.LightningDataModule):
     
     def val_dataloader(self):
         '''
-        # TODO: Implement if needed
+        # TODO: Implement
         return DataLoader(
             <val_dataset>,
             batch_size=self.batch_size,
