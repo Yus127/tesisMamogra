@@ -111,5 +111,5 @@ trainer = pl.Trainer(
 
 trainer.fit(lightning_model, dataloader)
 # TODO validation and testing 
-trainer.validate(model, datavalload)
-trainer.test(model, datatestload)
+trainer.validate(lightning_model, datavalload)
+trainer.test(lightning_model, datatestload)
