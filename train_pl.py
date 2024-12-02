@@ -60,7 +60,7 @@ datamodule = ComplexMedicalDataset(
     data_dir="/home/yus/test/tesisMamogra/",
     processor=model,
     tokenizer=tokenizer,
-    batch_size=32,
+    #batch_size=32,
     val_split_ratio=0.15,  # 15% of data for validation
     random_seed=42
 )
@@ -74,12 +74,12 @@ else:
     print("Tensor is full of zeros.")
 
 # Create DataLoader
-#dataloader = DataLoader(
-#    dataset, 
-#    batch_size=32, 
-#    shuffle=True, 
-#    collate_fn=ComplexMedicalDataset.collate_fn
-#    )
+dataloader = DataLoader(
+    datamodule, 
+    batch_size=32, 
+    shuffle=True, 
+    collate_fn=ComplexMedicalDataset.collate_fn
+    )
 
 
 
