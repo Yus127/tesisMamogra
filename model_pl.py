@@ -173,82 +173,101 @@ class LightningBiomedCLIP(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         print("validation step ")
         images = batch['image']
-        texts = batch['text']
+        texts = batch['text']  # Already tokenized [batch_size, seq_len]
+        
+        # Move to device if needed
+        texts = texts.to(self.device)
+        
+        # Get logits
+        logits = self(images)  # [batch_size, vocab_size]
+        ce_loss = self.criterion(logits, texts[:, 0])
+        #print(logits)
         
         # Generate complete sequences
-        generated_seqs = self.generate(images)
-        
-        # Convert sequences to text
+        generated_seqs = self.generate(images)  # [batch_size, seq_len]
+
         true_texts = []
         pred_texts = []
         
+        # Convert true and generated sequences to text
         for i in range(len(texts)):
+            # Decode true sequence
             true_text = self.decode_tokens(texts[i])
             true_texts.append(true_text)
             
+            # Decode predicted sequence
             pred_text = self.decode_tokens(generated_seqs[i])
             pred_texts.append(pred_text)
-        
-        # Calculate BLEU score
 
-        bleu_score = self.bleu(pred_texts, [[text] for text in true_texts])
-        
-        # Calculate cross entropy loss
-        logits = self(images)
-        ce_loss = self.criterion(logits, texts[:, 0])
-        
-        # Combined loss
-        loss = ce_loss - 0.1 * bleu_score
+        bleu_score = self.bleu(pred_texts, [true_texts])
+
+
+        # Combined loss (weighted sum)
+        loss = ce_loss - 0.1 * bleu_score  # Negative because we want to maximize BLEU
         
         # Log metrics
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_bleu', bleu_score, prog_bar=True)
-        self.log('val_ce_loss', ce_loss, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_bleu', bleu_score, prog_bar=True)
+        self.log('train_ce_loss', ce_loss, prog_bar=True)
         
-        if batch_idx == 0:
-            print("\nValidation Examples:")
-            for i in range(min(3, len(true_texts))):
+        if batch_idx % 100 == 0:
+            print("\nTraining Examples:")
+            for i in range(min(2, len(true_texts))):
                 #print(f"\nTrue text: {true_texts[i]}")
                 print(f"Generated text: {pred_texts[i]}")
                 print(f"BLEU score: {bleu_score:.4f}")
+        
         
         return loss
     
     def test_step(self, batch, batch_idx):
         print("Testing step")
         
-        # Extract images and texts from the batch
         images = batch['image']
-        texts = batch['text']
+        texts = batch['text']  # Already tokenized [batch_size, seq_len]
         
-        # Generate sequences
-        generated_seqs = self.generate(images)
+        # Move to device if needed
+        texts = texts.to(self.device)
         
-        # Decode sequences
-        true_texts = [self.decode_tokens(t) for t in texts]
-        pred_texts = [self.decode_tokens(g) for g in generated_seqs]
-        
-        # Calculate BLEU score
-        bleu_score = self.bleu(pred_texts, [[t] for t in true_texts])
-        
-        # Calculate cross-entropy loss
-        logits = self(images)
+        # Get logits
+        logits = self(images)  # [batch_size, vocab_size]
         ce_loss = self.criterion(logits, texts[:, 0])
+        #print(logits)
         
-        # Combined loss
-        loss = ce_loss - 0.1 * bleu_score
+        # Generate complete sequences
+        generated_seqs = self.generate(images)  # [batch_size, seq_len]
+
+        true_texts = []
+        pred_texts = []
         
-        # Log test metrics
-        self.log('test_loss', loss, prog_bar=True)
-        self.log('test_bleu', bleu_score, prog_bar=True)
-        self.log('test_ce_loss', ce_loss, prog_bar=True)
+        # Convert true and generated sequences to text
+        for i in range(len(texts)):
+            # Decode true sequence
+            true_text = self.decode_tokens(texts[i])
+            true_texts.append(true_text)
+            
+            # Decode predicted sequence
+            pred_text = self.decode_tokens(generated_seqs[i])
+            pred_texts.append(pred_text)
+
+        bleu_score = self.bleu(pred_texts, [true_texts])
+
+
+        # Combined loss (weighted sum)
+        loss = ce_loss - 0.1 * bleu_score  # Negative because we want to maximize BLEU
         
-        if batch_idx == 0:
-            print("\nTest Examples:")
-            for i in range(min(3, len(true_texts))):
-                print(f"\nTrue text: {true_texts[i]}")
+        # Log metrics
+        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_bleu', bleu_score, prog_bar=True)
+        self.log('train_ce_loss', ce_loss, prog_bar=True)
+        
+        if batch_idx % 100 == 0:
+            print("\nTraining Examples:")
+            for i in range(min(2, len(true_texts))):
+                #print(f"\nTrue text: {true_texts[i]}")
                 print(f"Generated text: {pred_texts[i]}")
                 print(f"BLEU score: {bleu_score:.4f}")
+        
         
         return loss
 
