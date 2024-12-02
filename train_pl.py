@@ -6,16 +6,12 @@ from torchvision import transforms
 from typing import List, Optional
 
 from model_pl import LightningBiomedCLIP
-from dataset_pl import ComplexMedicalDataset, MyDatamodule
+from dataset_pl import ComplexMedicalDataset
 import config_pl
-from torch.utils.data import random_split, Subset
 
 from pytorch_lightning.callbacks import EarlyStopping
 
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
-
-torch.set_float32_matmul_precision("medium")
-
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
@@ -49,37 +45,29 @@ lightning_model = LightningBiomedCLIP(
 # Initialize tokenizer
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 
-datamodule = MyDatamodule(
+# Create dataset instance
+dataset = ComplexMedicalDataset(
     data_dir="/home/yus/test/tesisMamogra/",
     processor=model,
-    tokenizer=tokenizer,
-    batch_size=32,
-    num_workers=4,
-    val_split_ratio=0.2,
-    test_split_ratio=0.1,
-    random_seed=42
+    tokenizer=tokenizer
 )
 
+print(f"Sample from dataset: {dataset[0]}")
 
-#print(f"Sample from dataset: {dataset[0]}")
-
-#if torch.any(dataset[4]["image"] != 0):
-#    print("Tensor contains non-zero values.")
-#else:
-#    print("Tensor is full of zeros.")
+if torch.any(dataset[4]["image"] != 0):
+    print("Tensor contains non-zero values.")
+else:
+    print("Tensor is full of zeros.")
 
 # Create DataLoader
 dataloader = DataLoader(
-    datamodule, 
+    dataset, 
     batch_size=32, 
     shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
-
-
-
-print(f"DataLoader configuration: {datamodule}")
+print(f"DataLoader configuration: {dataloader}")
 
 trainer = pl.Trainer(
     accelerator=config_pl.ACCELERATOR,
@@ -93,7 +81,7 @@ trainer = pl.Trainer(
 ) 
 #trainer.tune, find the hpyerparameters
 
-trainer.fit(lightning_model,  datamodule)
+trainer.fit(lightning_model, dataloader)
 # TODO validation and testing 
-#trainer.validate(model,  datamodule=datamodule)
-#trainer.test(model,  datamodule=datamodule)
+#trainer.validate(model, dm)
+#trainer.test(model, dm)
