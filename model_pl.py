@@ -214,6 +214,45 @@ class LightningBiomedCLIP(pl.LightningModule):
         
         return loss
     
+    def test_step(self, batch, batch_idx):
+        print("Testing step")
+        
+        # Extract images and texts from the batch
+        images = batch['image']
+        texts = batch['text']
+        
+        # Generate sequences
+        generated_seqs = self.generate(images)
+        
+        # Decode sequences
+        true_texts = [self.decode_tokens(t) for t in texts]
+        pred_texts = [self.decode_tokens(g) for g in generated_seqs]
+        
+        # Calculate BLEU score
+        bleu_score = self.bleu(pred_texts, [[t] for t in true_texts])
+        
+        # Calculate cross-entropy loss
+        logits = self(images)
+        ce_loss = self.criterion(logits, texts[:, 0])
+        
+        # Combined loss
+        loss = ce_loss - 0.1 * bleu_score
+        
+        # Log test metrics
+        self.log('test_loss', loss, prog_bar=True)
+        self.log('test_bleu', bleu_score, prog_bar=True)
+        self.log('test_ce_loss', ce_loss, prog_bar=True)
+        
+        if batch_idx == 0:
+            print("\nTest Examples:")
+            for i in range(min(3, len(true_texts))):
+                print(f"\nTrue text: {true_texts[i]}")
+                print(f"Generated text: {pred_texts[i]}")
+                print(f"BLEU score: {bleu_score:.4f}")
+        
+        return loss
+
+    
     def generate(self, images, max_length=None, temperature=1.0, top_k=50):
         """
         Generate complete token sequences using top-k sampling
