@@ -93,7 +93,7 @@ trainer = pl.Trainer(
 ) 
 #trainer.tune, find the hpyerparameters
 
-trainer.fit(lightning_model, datamodule)
+trainer.fit(lightning_model,  datamodule=datamodule)
 # TODO validation and testing 
-trainer.validate(model, datamodule)
-trainer.test(model, datamodule)
+trainer.validate(model,  datamodule=datamodule)
+trainer.test(model,  datamodule=datamodule)
