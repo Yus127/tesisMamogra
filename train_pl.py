@@ -69,12 +69,12 @@ datamodule = MyDatamodule(
 #    print("Tensor is full of zeros.")
 
 # Create DataLoader
-#dataloader = DataLoader(
-#    datamodule, 
-#    batch_size=32, 
-#    shuffle=True, 
-#    collate_fn=ComplexMedicalDataset.collate_fn
-#    )
+dataloader = DataLoader(
+    datamodule, 
+    batch_size=32, 
+    shuffle=True, 
+    collate_fn=ComplexMedicalDataset.collate_fn
+    )
 
 
 
@@ -93,7 +93,7 @@ trainer = pl.Trainer(
 ) 
 #trainer.tune, find the hpyerparameters
 
-trainer.fit(lightning_model,  datamodule=datamodule)
+trainer.fit(lightning_model,  datamodule)
 # TODO validation and testing 
-trainer.validate(model,  datamodule=datamodule)
-trainer.test(model,  datamodule=datamodule)
+#trainer.validate(model,  datamodule=datamodule)
+#trainer.test(model,  datamodule=datamodule)
