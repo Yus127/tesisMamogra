@@ -28,6 +28,7 @@ class ComplexMedicalDataset(Dataset):
         #print(self.data)
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.data_dir = data_dir.rsplit('/', 1)[0]
 
 
     def __len__(self):
