@@ -6,6 +6,7 @@ import os
 import nrrd
 import json
 from PIL import Image
+from torch.utils.data import random_split, DataLoader
 
 
 """Expected JSON Structure
@@ -163,7 +164,7 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, processor, tokenizer, batch_size:int = 32, num_workers:int = 4):
+    def __init__(self, data_dir:str, processor, tokenizer, batch_size, num_workers,  val_split_ratio, random_seed):
         super(MyDatamodule).__init__()
         # Dataset info
         self.data_dir = data_dir
@@ -173,16 +174,46 @@ class MyDatamodule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
+        # Split parameters
+        self.val_split_ratio = val_split_ratio
+        self.random_seed = random_seed
+        
+        # Datasets will be set in setup method
+        self.train_dataset = None
+        self.val_dataset = None
+        self.test_dataset = None
+
 
     def setup(self, stage=None):
+
+        full_dataset = ComplexMedicalDataset(
+            self.data_dir, 
+            self.processor, 
+            self.tokenizer
+        )
+        
+        # Calculate split sizes
+        total_size = len(full_dataset)
+        val_size = int(total_size * self.val_split_ratio)
+        train_size = total_size - val_size
+        
+        # Set random seed for reproducibility
+        generator = torch.Generator().manual_seed(self.random_seed)
+        
+        # Split the dataset
+        self.train_dataset, self.val_dataset = random_split(
+            full_dataset, 
+            [train_size, val_size], 
+            generator=generator
+        )
         '''
         Executes on every GPU. Setup the dataset for training, validation and testing.
-        '''
+        
         if stage == 'fit' or stage is None:
             self.train_dataset = ComplexMedicalDataset(self.data_dir, self.processor, self.tokenizer)
         if stage == 'test' or stage is None:
             self.test_dataset = ComplexMedicalDataset(self.data_dir, self.processor, self.tokenizer)
-        
+        '''
 
     def train_dataloader(self):
         return DataLoader(
@@ -194,30 +225,26 @@ class MyDatamodule(L.LightningDataModule):
         )
     
     def val_dataloader(self):
-        '''
+        
         # TODO: Implement
         return DataLoader(
-            <val_dataset>,
+            self.val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             collate_fn=ComplexMedicalDataset.collate_fn
         )
-        '''
-        return None
+        
+        #return None
     
     def test_dataloader(self):
-        '''
-        # TODO: Implement if needed
         return DataLoader(
-            <test_dataset>,
+            self.test_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             collate_fn=ComplexMedicalDataset.collate_fn
         )
-        '''
-        return None
     
     """
     TODO REVISAR EL MODELO DE BIOMEDCLIP PARA VER SI RECIBE 4 DIMENSIONES O SOLO 3, Y DE ALLÍ ADECUAR EL CODIGO DEL DATASET O DEL MODELO PARA PODE PROCESAR LA MÁSCARA CON LA IMAGEN"""
