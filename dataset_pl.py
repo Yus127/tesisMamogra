@@ -194,7 +194,7 @@ class MyDatamodule(L.LightningDataModule):
             collate_fn=ComplexMedicalDataset.collate_fn
         )
     
-    def val_dataloader(self):
+    #def val_dataloader(self):
         '''
         # TODO: Implement
         return DataLoader(
@@ -205,9 +205,9 @@ class MyDatamodule(L.LightningDataModule):
             collate_fn=ComplexMedicalDataset.collate_fn
         )
         '''
-        return None
+        #return None
     
-    def test_dataloader(self):
+    #def test_dataloader(self):
         '''
         # TODO: Implement if needed
         return DataLoader(
@@ -218,7 +218,7 @@ class MyDatamodule(L.LightningDataModule):
             collate_fn=ComplexMedicalDataset.collate_fn
         )
         '''
-        return None
+        #return None
     
     """
     TODO REVISAR EL MODELO DE BIOMEDCLIP PARA VER SI RECIBE 4 DIMENSIONES O SOLO 3, Y DE ALLÍ ADECUAR EL CODIGO DEL DATASET O DEL MODELO PARA PODE PROCESAR LA MÁSCARA CON LA IMAGEN"""
