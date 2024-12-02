@@ -186,26 +186,28 @@ class MyDatamodule(L.LightningDataModule):
 
     def setup(self, stage=None):
 
-        full_dataset = ComplexMedicalDataset(
+        self.dataset = ComplexMedicalDataset(
             self.data_dir, 
             self.processor, 
             self.tokenizer
         )
         
         # Calculate split sizes
-        total_size = len(full_dataset)
+        total_size = len(self.dataset)
+        test_size = int(total_size * self.test_split_ratio)
         val_size = int(total_size * self.val_split_ratio)
-        train_size = total_size - val_size
+        train_size = total_size - test_size - val_size
         
         # Set random seed for reproducibility
-        generator = torch.Generator().manual_seed(self.random_seed)
+        torch.manual_seed(self.random_seed)
         
-        # Split the dataset
-        self.train_dataset, self.val_dataset = random_split(
-            full_dataset, 
-            [train_size, val_size], 
-            generator=generator
+        # Split dataset
+        self.train_dataset, self.val_dataset, self.test_dataset = random_split(
+            self.dataset, 
+            [train_size, val_size, test_size],
+            generator=torch.Generator().manual_seed(self.random_seed)
         )
+    
         '''
         Executes on every GPU. Setup the dataset for training, validation and testing.
         
@@ -225,8 +227,6 @@ class MyDatamodule(L.LightningDataModule):
         )
     
     def val_dataloader(self):
-        
-        # TODO: Implement
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
@@ -234,8 +234,6 @@ class MyDatamodule(L.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=ComplexMedicalDataset.collate_fn
         )
-        
-        #return None
     
     def test_dataloader(self):
         return DataLoader(
@@ -245,6 +243,7 @@ class MyDatamodule(L.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=ComplexMedicalDataset.collate_fn
         )
+
     
     """
     TODO REVISAR EL MODELO DE BIOMEDCLIP PARA VER SI RECIBE 4 DIMENSIONES O SOLO 3, Y DE ALLÍ ADECUAR EL CODIGO DEL DATASET O DEL MODELO PARA PODE PROCESAR LA MÁSCARA CON LA IMAGEN"""

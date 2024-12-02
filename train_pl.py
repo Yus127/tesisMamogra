@@ -6,7 +6,7 @@ from torchvision import transforms
 from typing import List, Optional
 
 from model_pl import LightningBiomedCLIP
-from dataset_pl import ComplexMedicalDataset
+from dataset_pl import ComplexMedicalDataset, MyDatamodule
 import config_pl
 from torch.utils.data import random_split, Subset
 
@@ -49,37 +49,32 @@ lightning_model = LightningBiomedCLIP(
 # Initialize tokenizer
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 
-# Create dataset instance
-dataset = ComplexMedicalDataset(
-    data_dir="/home/yus/test/tesisMamogra/",
-    processor=model,
-    tokenizer=tokenizer
-)
-
-datamodule = ComplexMedicalDataset(
+datamodule = MyDatamodule(
     data_dir="/home/yus/test/tesisMamogra/",
     processor=model,
     tokenizer=tokenizer,
-    #batch_size=32,
-    #val_split_ratio=0.15,  # 15% of data for validation
-    #random_seed=42
+    batch_size=32,
+    num_workers=4,
+    val_split_ratio=0.2,
+    test_split_ratio=0.1,
+    random_seed=42
 )
 
 
-print(f"Sample from dataset: {dataset[0]}")
+#print(f"Sample from dataset: {dataset[0]}")
 
-if torch.any(dataset[4]["image"] != 0):
-    print("Tensor contains non-zero values.")
-else:
-    print("Tensor is full of zeros.")
+#if torch.any(dataset[4]["image"] != 0):
+#    print("Tensor contains non-zero values.")
+#else:
+#    print("Tensor is full of zeros.")
 
 # Create DataLoader
-dataloader = DataLoader(
-    datamodule, 
-    batch_size=32, 
-    shuffle=True, 
-    collate_fn=ComplexMedicalDataset.collate_fn
-    )
+#dataloader = DataLoader(
+#    datamodule, 
+#    batch_size=32, 
+#    shuffle=True, 
+#    collate_fn=ComplexMedicalDataset.collate_fn
+#    )
 
 
 
@@ -100,5 +95,5 @@ trainer = pl.Trainer(
 
 trainer.fit(lightning_model, datamodule)
 # TODO validation and testing 
-#trainer.validate(model, val_loader)
-#trainer.test(model, test_loader)
+trainer.validate(model, datamodule)
+trainer.test(model, datamodule)
