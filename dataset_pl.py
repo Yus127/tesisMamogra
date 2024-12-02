@@ -23,7 +23,7 @@ class ComplexMedicalDataset(Dataset):
         self.processor = processor
         self.tokenizer = tokenizer
         
-        with open(os.path.join(data_dir, 'conclusions.json'), 'r') as f:
+        with open(data_dir, 'r') as f:
             self.data = json.load(f)
         #print(self.data)
         

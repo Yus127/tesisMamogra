@@ -47,7 +47,20 @@ tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_p
 
 # Create dataset instance
 dataset = ComplexMedicalDataset(
-    data_dir="/home/yus/test/tesisMamogra/",
+    data_dir="/home/yus/test/tesisMamogra/test.json",
+    processor=model,
+    tokenizer=tokenizer
+)
+
+
+dataval = ComplexMedicalDataset(
+    data_dir="/home/yus/test/tesisMamogra/val.json",
+    processor=model,
+    tokenizer=tokenizer
+)
+
+datatest = ComplexMedicalDataset(
+    data_dir="/home/yus/test/tesisMamogra/test.json",
     processor=model,
     tokenizer=tokenizer
 )
@@ -62,6 +75,21 @@ else:
 # Create DataLoader
 dataloader = DataLoader(
     dataset, 
+    batch_size=32, 
+    shuffle=True, 
+    collate_fn=ComplexMedicalDataset.collate_fn
+    )
+
+datavalload = DataLoader(
+    dataval, 
+    batch_size=32, 
+    shuffle=True, 
+    collate_fn=ComplexMedicalDataset.collate_fn
+    )
+
+
+datatestload = DataLoader(
+    datatest, 
     batch_size=32, 
     shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
@@ -83,5 +111,5 @@ trainer = pl.Trainer(
 
 trainer.fit(lightning_model, dataloader)
 # TODO validation and testing 
-#trainer.validate(model, dm)
-#trainer.test(model, dm)
+trainer.validate(model, datavalload)
+trainer.test(model, datatestload)
