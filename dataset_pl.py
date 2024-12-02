@@ -164,7 +164,7 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, processor, tokenizer, batch_size, num_workers,  val_split_ratio, random_seed):
+    def __init__(self, data_dir:str, processor, tokenizer, batch_size, num_workers,  val_split_ratio, test_split_ratio, random_seed):
         super(MyDatamodule).__init__()
         # Dataset info
         self.data_dir = data_dir
@@ -176,10 +176,14 @@ class MyDatamodule(L.LightningDataModule):
 
         # Split parameters
         self.val_split_ratio = val_split_ratio
+        self.test_split_ratio = test_split_ratio
+
         self.random_seed = random_seed
         
         # Datasets will be set in setup method
         self.train_dataset = None
+        self.dataset = None
+
         self.val_dataset = None
         self.test_dataset = None
 
