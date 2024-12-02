@@ -61,8 +61,8 @@ datamodule = ComplexMedicalDataset(
     processor=model,
     tokenizer=tokenizer,
     #batch_size=32,
-    val_split_ratio=0.15,  # 15% of data for validation
-    random_seed=42
+    #val_split_ratio=0.15,  # 15% of data for validation
+    #random_seed=42
 )
 
 
