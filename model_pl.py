@@ -329,7 +329,7 @@ class LightningBiomedCLIP(pl.LightningModule):
             }
         }
 
-class CLIPLinearProbe(L.LightningModule):
+class CLIPLinearProbe(pl.LightningModule):
     def __init__(self, clip_model, class_descriptions, freeze_backbone=True):
         """
         Linear probe for CLIP model using text descriptions as classes
