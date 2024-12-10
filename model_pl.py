@@ -328,3 +328,115 @@ class LightningBiomedCLIP(pl.LightningModule):
                 'interval': 'step'
             }
         }
+
+class CLIPLinearProbe(L.LightningModule):
+    def __init__(self, clip_model, class_descriptions, freeze_backbone=True):
+        """
+        Linear probe for CLIP model using text descriptions as classes
+        
+        Args:
+            clip_model (CLIPModel): Pre-trained CLIP model
+            class_descriptions (list): List of text descriptions for each class
+            freeze_backbone (bool): Whether to freeze CLIP model parameters
+        """
+        super().__init__()
+        
+        self.clip_model = clip_model
+        self.class_descriptions = class_descriptions
+        self.num_classes = len(class_descriptions)
+        
+        # Freeze CLIP model parameters if specified
+        if freeze_backbone:
+            for param in clip_model.parameters():
+                param.requires_grad = False
+        
+        # Use the vision transformer as feature extractor
+        self.feature_extractor = clip_model.vision_model
+        
+        # Linear classification head
+        hidden_size = clip_model.config.vision_config.hidden_size
+        self.classifier = nn.Sequential(
+            nn.Linear(hidden_size, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, self.num_classes)
+        )
+        
+        # Store class embeddings
+        with torch.no_grad():
+            text_inputs = clip_model.tokenizer(
+                class_descriptions, 
+                padding=True, 
+                return_tensors="pt"
+            )
+            self.class_embeddings = clip_model.text_model(**text_inputs).pooler_output
+        
+        # Loss function
+        self.loss_fn = nn.CrossEntropyLoss()
+
+    def forward(self, images):
+        vision_outputs = self.feature_extractor(images)
+        pooled_output = vision_outputs.pooler_output
+        logits = self.classifier(pooled_output)
+        return logits
+
+    def training_step(self, batch, batch_idx):
+        images = batch['image']
+        text = batch['text']
+        
+        # Get text embeddings using CLIP's text encoder
+        with torch.no_grad():
+            text_outputs = self.clip_model.text_model(**text)
+            text_embeddings = text_outputs.pooler_output
+        
+        # Find the closest class embedding
+        similarities = torch.matmul(text_embeddings, self.class_embeddings.T)
+        labels = torch.argmax(similarities, dim=1)
+        
+        # Forward pass
+        logits = self(images)
+        
+        # Compute loss
+        loss = self.loss_fn(logits, labels)
+        
+        # Log training metrics
+        self.log('train_loss', loss, prog_bar=True, on_step=True, on_epoch=True)
+        
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        images = batch['image']
+        text = batch['text']
+        
+        # Get text embeddings and labels
+        with torch.no_grad():
+            text_outputs = self.clip_model.text_model(**text)
+            text_embeddings = text_outputs.pooler_output
+            similarities = torch.matmul(text_embeddings, self.class_embeddings.T)
+            labels = torch.argmax(similarities, dim=1)
+        
+        # Forward pass
+        logits = self(images)
+        
+        # Compute loss and accuracy
+        loss = self.loss_fn(logits, labels)
+        preds = torch.argmax(logits, dim=1)
+        acc = torch.sum(preds == labels).float() / len(labels)
+        
+        # Log validation metrics
+        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_acc', acc, prog_bar=True)
+        
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-2)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {
+                'scheduler': scheduler,
+                'interval': 'epoch',
+                'frequency': 1
+            }
+        }
