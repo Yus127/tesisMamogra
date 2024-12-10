@@ -4,6 +4,8 @@ import pytorch_lightning as pl
 from torchmetrics.text import BLEUScore
 from transformers import get_linear_schedule_with_warmup
 import torch.nn.functional as F
+import torch.optim as optim
+
 
 """
 Text generation or image-captioning model using a pretrained CLIP model as a base 
@@ -350,11 +352,17 @@ class CLIPLinearProbe(pl.LightningModule):
             for param in clip_model.parameters():
                 param.requires_grad = False
         
-        # Use the vision transformer as feature extractor
-        self.feature_extractor = clip_model.vision_model
+        # Use the visual encoder as feature extractor
+        self.feature_extractor = clip_model.visual
+        
+        # Get the output dimension from the visual encoder
+        # We'll do a forward pass with a dummy input to get the dimension
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 3, 224, 224)
+            visual_output = self.feature_extractor(dummy_input)
+            hidden_size = visual_output.shape[-1]
         
         # Linear classification head
-        hidden_size = clip_model.config.vision_config.hidden_size
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.ReLU(),
@@ -364,20 +372,20 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Store class embeddings
         with torch.no_grad():
-            text_inputs = clip_model.tokenizer(
-                class_descriptions, 
-                padding=True, 
-                return_tensors="pt"
-            )
-            self.class_embeddings = clip_model.text_model(**text_inputs).pooler_output
+            text_features = []
+            for desc in class_descriptions:
+                text_features.append(clip_model.encode_text(clip_model.tokenizer([desc])))
+            self.class_embeddings = torch.cat(text_features)
         
         # Loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, images):
-        vision_outputs = self.feature_extractor(images)
-        pooled_output = vision_outputs.pooler_output
-        logits = self.classifier(pooled_output)
+        # Extract features from images
+        visual_features = self.feature_extractor(images)
+        
+        # Classification
+        logits = self.classifier(visual_features)
         return logits
 
     def training_step(self, batch, batch_idx):
@@ -386,12 +394,10 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Get text embeddings using CLIP's text encoder
         with torch.no_grad():
-            text_outputs = self.clip_model.text_model(**text)
-            text_embeddings = text_outputs.pooler_output
-        
-        # Find the closest class embedding
-        similarities = torch.matmul(text_embeddings, self.class_embeddings.T)
-        labels = torch.argmax(similarities, dim=1)
+            text_features = self.clip_model.encode_text(text)
+            # Find the closest class embedding
+            similarities = torch.matmul(text_features, self.class_embeddings.T)
+            labels = torch.argmax(similarities, dim=1)
         
         # Forward pass
         logits = self(images)
@@ -410,9 +416,8 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Get text embeddings and labels
         with torch.no_grad():
-            text_outputs = self.clip_model.text_model(**text)
-            text_embeddings = text_outputs.pooler_output
-            similarities = torch.matmul(text_embeddings, self.class_embeddings.T)
+            text_features = self.clip_model.encode_text(text)
+            similarities = torch.matmul(text_features, self.class_embeddings.T)
             labels = torch.argmax(similarities, dim=1)
         
         # Forward pass
