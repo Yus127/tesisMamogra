@@ -68,20 +68,20 @@ lightning_model = LightningBiomedCLIP(
 
 # Create dataset instance
 dataset = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/tesisMamogra/train.json",
+    data_dir="/home/yus/test/tesisMamogra/originals/100images/train.json",
     processor=model,
     tokenizer=tokenizer
 )
 
 
 dataval = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/tesisMamogra/val.json",
+    data_dir="/home/yus/test/tesisMamogra/originals/100images/train.json",
     processor=model,
     tokenizer=tokenizer
 )
 
 datatest = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/tesisMamogra/test.json",
+    data_dir="/home/yus/test/tesisMamogra/originals/100images/test.json",
     processor=model,
     tokenizer=tokenizer
 )
