@@ -5,7 +5,7 @@ import nrrd
 from torchvision import transforms
 from typing import List, Optional
 
-from model_pl import LightningBiomedCLIP, CLIPLienarProbe
+from model_pl import LightningBiomedCLIP, CLIPLinearProbe
 from dataset_pl import ComplexMedicalDataset
 import config_pl
 
