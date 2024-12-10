@@ -23,16 +23,7 @@ class CaptioningHead(nn.Module):
         #x = self.dropout(self.dense(features))
         x = self.out_proj(x)
         return x
-"""    
-class MaskProcessor(nn.Module):
-    def __init__(self, in_channels: int = 4):  # 4 channels (RGB + mask)
-        super().__init__()
-        self.conv = nn.Conv2d(in_channels, 3, kernel_size=1)  # Convert to 3 channels
-        
-    def forward(self, x):
-        # x shape: [batch_size, 4, height, width]
-        return self.conv(x)
-"""
+
 class LightningBiomedCLIP(pl.LightningModule):
     def __init__(
         self,
@@ -75,13 +66,8 @@ class LightningBiomedCLIP(pl.LightningModule):
         self.bleu = BLEUScore()
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id)  # Assuming 0 is padding token
-    """
-    def process_image(self, images):
-        #Process images with or without mask
-        if self.use_mask_processor and images.size(1) == 4:  # If image has mask channel
-            return self.mask_processor(images)
-        return images # Return original image if no mask or mask processing needed
-    """
+   
+   
     def forward(self, images, texts=None):
         # Get image features from CLIP
         image_features, _, _ = self.model(images, texts)

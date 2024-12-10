@@ -33,42 +33,7 @@ class ComplexMedicalDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    """
-    def process_mask(self, mask_path):
-        try:
-            # Read NRRD file
-            mask_data, _ = nrrd.read(os.path.join(self.data_dir, mask_path))
-            
-            # Ensure mask is in correct format and resize
-            mask = torch.from_numpy(mask_data).float()
-            
-            # Resize mask to match image dimensions
-            resize_transform = transforms.Resize((224, 224))
-            
-            # Handle different mask formats
-            if mask.dim() == 2:  # Single channel mask
-                mask = mask.unsqueeze(0)  # Add channel dimension
-                mask = resize_transform(mask.unsqueeze(0)).squeeze(0)
-                mask = mask.repeat(4, 1, 1)  # Expand to 4 channels
-            elif mask.dim() == 3 and mask.size(0) != 4:  # Multi-channel mask but not 4 channels
-                if mask.size(0) == 1:
-                    mask = mask.repeat(4, 1, 1)
-                else:
-                    # Take first 4 channels or pad with zeros
-                    temp_mask = torch.zeros((4, mask.size(1), mask.size(2)))
-                    temp_mask[:min(4, mask.size(0))] = mask[:min(4, mask.size(0))]
-                    mask = temp_mask
-                mask = resize_transform(mask.unsqueeze(0)).squeeze(0)
-            
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-            mask = mask.to(device)
-            
-            return mask
 
-        except Exception as e:
-            print(f"Error processing mask {mask_path}: {str(e)}")
-            return torch.zeros((4, 224, 224))
-    """
     
     def process_image(self, image_path):
         try:
@@ -104,8 +69,6 @@ class ComplexMedicalDataset(Dataset):
 
         # Process images
         images = []
-        #masks = []
-        #for img_path, mask_path in zip(item[a]['image_paths'], item[a]['mask_paths']):
         for img_path in item[a]['image_paths']:
             processed_img = self.process_image(img_path)
             #processed_mask = self.process_mask(mask_path)
@@ -126,7 +89,7 @@ class ComplexMedicalDataset(Dataset):
         text = self.tokenizer(item[a]['report']).to(device)
         
         return {
-            #"image": masks,
+        
             "image": images,
             "text": text
         }
@@ -164,7 +127,7 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, processor, tokenizer, batch_size:int = 32, num_workers:int = 4):
+    def __init__(self, data_dir:str, processor, tokenizer, batch_size:int = 32, num_workers:int = 19):
         super(MyDatamodule).__init__()
         # Dataset info
         self.data_dir = data_dir
