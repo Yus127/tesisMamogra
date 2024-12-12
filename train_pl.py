@@ -79,9 +79,9 @@ dataset = ComplexMedicalDataset(
 
 
 dataval = ComplexMedicalDataset(
-    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
+    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
 
-    data_dir="/home/yus/test/tesisMamogra/train.json",
+    data_dir="/home/yus/test/tesisMamogra/test.json",
     processor=model,
     tokenizer=tokenizer
 )
@@ -105,14 +105,14 @@ else:
 train_loader = DataLoader(
     dataset, 
     batch_size=32, 
-    shuffle=True, 
+    #shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
 val_loader = DataLoader(
     dataval, 
     batch_size=32, 
-    shuffle=True, 
+    #shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
@@ -120,7 +120,7 @@ val_loader = DataLoader(
 datatestload = DataLoader(
     datatest, 
     batch_size=32, 
-    shuffle=True, 
+    #shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
@@ -136,8 +136,8 @@ trainer = pl.Trainer(
     max_epochs=config_pl.NUM_EPOCHS,
     precision=config_pl.PRECISION,
     log_every_n_steps = 3,
-    callbacks=[early_stop_callback],
-    deterministic=True
+    callbacks=[early_stop_callback]
+    #deterministic=True
 
 ) 
 #trainer.tune, find the hpyerparameters
