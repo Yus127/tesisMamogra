@@ -332,7 +332,12 @@ class LightningBiomedCLIP(pl.LightningModule):
         }
 
 class CLIPLinearProbe(pl.LightningModule):
-    def __init__(self, clip_model, class_descriptions, freeze_backbone=True):
+    def __init__(
+        self, 
+        clip_model, 
+        class_descriptions, 
+        tokenizer
+    ):
         """
         Linear probe for CLIP model using text descriptions as classes
         
@@ -341,26 +346,25 @@ class CLIPLinearProbe(pl.LightningModule):
             class_descriptions (list): List of text descriptions for each class
             freeze_backbone (bool): Whether to freeze CLIP model parameters
         """
-        super().__init__()
-        
+        super(CLIPLinearProbe, self).__init__()
+
+        #self.device = device
         self.clip_model = clip_model
         self.class_descriptions = class_descriptions
         self.num_classes = len(class_descriptions)
+
+
         
-        # Freeze CLIP model parameters if specified
-        if freeze_backbone:
-            for param in clip_model.parameters():
-                param.requires_grad = False
+        # Freeze CLIP model parameters 
+        for param in clip_model.parameters():
+            param.requires_grad = False
         
         # Use the visual encoder as feature extractor
         self.feature_extractor = clip_model.visual
         
         # Get the output dimension from the visual encoder
-        # We'll do a forward pass with a dummy input to get the dimension
-        with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224)
-            visual_output = self.feature_extractor(dummy_input)
-            hidden_size = visual_output.shape[-1]
+        
+        hidden_size=512
         
         # Linear classification head
         self.classifier = nn.Sequential(
@@ -369,20 +373,21 @@ class CLIPLinearProbe(pl.LightningModule):
             nn.Dropout(0.3),
             nn.Linear(512, self.num_classes)
         )
-        
+
         # Store class embeddings
         with torch.no_grad():
             text_features = []
             for desc in class_descriptions:
-                text_features.append(clip_model.encode_text(clip_model.tokenizer([desc])))
+                text_features.append(clip_model.encode_text(tokenizer([desc])))
             self.class_embeddings = torch.cat(text_features)
+        self.class_embeddings = self.class_embeddings.to(self.device)
         
         # Loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, images):
+    def forward(self, images, texts=None):
         # Extract features from images
-        visual_features = self.feature_extractor(images)
+        visual_features,_,_ = self.clip_model(images, texts)
         
         # Classification
         logits = self.classifier(visual_features)
@@ -391,10 +396,12 @@ class CLIPLinearProbe(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         images = batch['image']
         text = batch['text']
-        
+        text = text.to(self.device)
+
         # Get text embeddings using CLIP's text encoder
         with torch.no_grad():
             text_features = self.clip_model.encode_text(text)
+
             # Find the closest class embedding
             similarities = torch.matmul(text_features, self.class_embeddings.T)
             labels = torch.argmax(similarities, dim=1)
@@ -413,10 +420,15 @@ class CLIPLinearProbe(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         images = batch['image']
         text = batch['text']
+        text =text.to(self.device)
         
         # Get text embeddings and labels
+        print("get")
         with torch.no_grad():
-            text_features = self.clip_model.encode_text(text)
+            _, text_features, _ = self.clip_model(images, text)
+            self.class_embeddings = self.class_embeddings.to(self.device)
+            #print(self.class_embeddings.device)
+            #text_features = self.clip_model.encode_text(text)
             similarities = torch.matmul(text_features, self.class_embeddings.T)
             labels = torch.argmax(similarities, dim=1)
         
@@ -427,6 +439,11 @@ class CLIPLinearProbe(pl.LightningModule):
         loss = self.loss_fn(logits, labels)
         preds = torch.argmax(logits, dim=1)
         acc = torch.sum(preds == labels).float() / len(labels)
+
+        # Print predictions and actual labels
+        print("Predictions:", preds.tolist())
+        print("Actual labels:", labels.tolist())
+
         
         # Log validation metrics
         self.log('val_loss', loss, prog_bar=True)
