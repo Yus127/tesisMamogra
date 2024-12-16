@@ -422,37 +422,27 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         images = batch['image']
-        text = batch['text']
-        text =text.to(self.device)
+        labels = batch['text']  # Using text field directly as labels
+        labels = labels.to(self.device)
         
-        # Get text embeddings and labels
-        print("get")
-        with torch.no_grad():
-            _, text_features, _ = self.clip_model(images, text)
-            self.class_embeddings = self.class_embeddings.to(self.device)
-            #print(self.class_embeddings.device)
-            #text_features = self.clip_model.encode_text(text)
-            similarities = torch.matmul(text_features, self.class_embeddings.T)
-            labels = torch.argmax(similarities, dim=1)
-        
-        # Forward pass
+        # Forward pass through the linear probe
         logits = self(images)
         
         # Compute loss and accuracy
         loss = self.loss_fn(logits, labels)
         preds = torch.argmax(logits, dim=1)
         acc = torch.sum(preds == labels).float() / len(labels)
-
-        # Print predictions and actual labels
+        
+        # Print predictions and actual labels for debugging
         print("Predictions:", preds.tolist())
         print("Actual labels:", labels.tolist())
-
         
-        # Log validation metrics
+        # Log metrics
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_acc', acc, prog_bar=True)
         
-        return loss
+        return {'val_loss': loss, 'val_acc': acc}
+    
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-2)
