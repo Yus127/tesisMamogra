@@ -338,21 +338,14 @@ class CLIPLinearProbe(pl.LightningModule):
         class_descriptions, 
         tokenizer
     ):
-        """
-        Linear probe for CLIP model using text descriptions as classes
-        
-        Args:
-            clip_model (CLIPModel): Pre-trained CLIP model
-            class_descriptions (list): List of text descriptions for each class
-            freeze_backbone (bool): Whether to freeze CLIP model parameters
-        """
         super(CLIPLinearProbe, self).__init__()
-
-        #self.device = device
+        
         self.clip_model = clip_model
         self.class_descriptions = class_descriptions
         self.num_classes = len(class_descriptions)
-        print(class_descriptions)
+        self.tokenizer = tokenizer
+        print(f"Number of classes: {self.num_classes}")
+        print("Class descriptions:", class_descriptions)
         
         # Freeze CLIP model parameters 
         for param in clip_model.parameters():
@@ -361,51 +354,58 @@ class CLIPLinearProbe(pl.LightningModule):
         # Use the visual encoder as feature extractor
         self.feature_extractor = clip_model.visual
         
-        # Get the output dimension from the visual encoder
-        
-        hidden_size=512
+        # Define hidden size
+        hidden_size = 512
         
         # Linear classification head
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(512, self.num_classes)
+            nn.Linear(512, self.num_classes)  # Output size matches number of classes
         )
 
-        # Store class embeddings
+        # Compute and store class embeddings
         with torch.no_grad():
             text_features = []
             for desc in class_descriptions:
-                text_features.append(clip_model.encode_text(tokenizer([desc])))
+                # Encode each class description
+                encoded = clip_model.encode_text(tokenizer([desc]))
+                text_features.append(encoded)
             self.class_embeddings = torch.cat(text_features)
-        self.class_embeddings = self.class_embeddings.to(self.device)
+            # Normalize embeddings
+            self.class_embeddings = self.class_embeddings / self.class_embeddings.norm(dim=-1, keepdim=True)
         
         # Loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, images, texts=None):
         # Extract features from images
-        visual_features,_,_ = self.clip_model(images, texts)
-        
+        visual_features, _, _ = self.clip_model(images, texts)
         # Classification
         logits = self.classifier(visual_features)
         return logits
 
+    def _get_labels_from_text(self, text_tokens):
+        """Convert text tokens to class labels using CLIP similarity"""
+        with torch.no_grad():
+            # Encode the input text
+            text_features = self.clip_model.encode_text(text_tokens)
+            # Normalize features
+            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+            # Compute similarities with class embeddings
+            similarities = torch.matmul(text_features, self.class_embeddings.T)
+            # Get the most similar class as the label
+            labels = torch.argmax(similarities, dim=1)
+        return labels
+
     def training_step(self, batch, batch_idx):
         images = batch['image']
         text = batch['text']
-        print("training")
-        print(text)
         text = text.to(self.device)
-
-        # Get text embeddings using CLIP's text encoder
-        with torch.no_grad():
-            text_features = self.clip_model.encode_text(text)
-
-            # Find the closest class embedding
-            similarities = torch.matmul(text_features, self.class_embeddings.T)
-            labels = torch.argmax(similarities, dim=1)
+        
+        # Convert text to labels using CLIP similarities
+        labels = self._get_labels_from_text(text)
         
         # Forward pass
         logits = self(images)
@@ -413,53 +413,48 @@ class CLIPLinearProbe(pl.LightningModule):
         # Compute loss
         loss = self.loss_fn(logits, labels)
         
-        # Log training metrics
-        self.log('train_loss', loss, prog_bar=True, on_step=True, on_epoch=True)
+        # Compute accuracy
+        preds = torch.argmax(logits, dim=1)
+        acc = torch.sum(preds == labels).float() / len(labels)
+        
+        # Log metrics
+        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_acc', acc, prog_bar=True)
         
         return loss
 
     def validation_step(self, batch, batch_idx):
         images = batch['image']
-        text_labels = batch['text']  # Shape: [14, 256]
+        text = batch['text']
+        text = text.to(self.device)
         
-        # If text_labels contains one-hot encodings or token IDs, we need to get a single label per sample
-        # For now, let's assume we want the first token/value from each row
-        labels = text_labels[:, 0]  # Take first element from each row to get shape [14]
-        labels = labels.to(self.device)
+        # Convert text to labels using CLIP similarities (same as training)
+        labels = self._get_labels_from_text(text)
         
-        # Forward pass through the linear probe
-        logits = self(images)  # Current shape: [14, 17]
+        # Forward pass
+        logits = self(images)
         
         # Print shapes for debugging
-        print(f"Logits shape: {logits.shape}")
-        print(f"Labels shape: {labels.shape}")
-        print(f"Labels dtype: {labels.dtype}")
-        print(f"Unique labels: {torch.unique(labels).tolist()}")
+        if batch_idx == 0:  # Only print for first batch
+            print(f"Logits shape: {logits.shape}")
+            print(f"Labels shape: {labels.shape}")
+            print(f"Unique labels: {torch.unique(labels).tolist()}")
         
-        # Ensure labels are the right type
-        labels = labels.long()
+        # Compute metrics
+        loss = self.loss_fn(logits, labels)
+        preds = torch.argmax(logits, dim=1)
+        acc = torch.sum(preds == labels).float() / len(labels)
         
-        # Compute loss and accuracy
-        try:
-            loss = self.loss_fn(logits, labels)
-            preds = torch.argmax(logits, dim=1)
-            acc = torch.sum(preds == labels).float() / len(labels)
-            
-            # Print predictions and actual labels for debugging
+        # Print predictions for debugging
+        if batch_idx == 0:  # Only print for first batch
             print("Predictions:", preds.tolist())
             print("Actual labels:", labels.tolist())
-            
-            # Log metrics
-            self.log('val_loss', loss, prog_bar=True)
-            self.log('val_acc', acc, prog_bar=True)
-            
-            return {'val_loss': loss, 'val_acc': acc}
-        except Exception as e:
-            print(f"Error in loss computation: {e}")
-            print(f"Logits min/max: {logits.min().item()}, {logits.max().item()}")
-            print(f"Labels min/max: {labels.min().item()}, {labels.max().item()}")
-            raise
-    
+        
+        # Log metrics
+        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_acc', acc, prog_bar=True)
+        
+        return {'val_loss': loss, 'val_acc': acc}
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-2)
