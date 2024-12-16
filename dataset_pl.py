@@ -114,7 +114,8 @@ class ComplexMedicalDataset(Dataset):
         images = torch.stack(all_images).to(device)  
         texts = torch.stack(all_texts)
         texts=texts.squeeze(1)
-        texts.to(device)
+        texts = texts.to(device)  # Fixed: properly move texts to device
+
         
         #print(f"Final batch image shape: {images.shape}")
         #print(f"Final batch text shape: {texts.shape}")
