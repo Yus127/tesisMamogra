@@ -1,63 +1,52 @@
 [
     {
-        "S0021514_2016_RMLO.tif": {
+        "S0016188_2019_RMLO.tif": {
             "image_paths": [
-                "originals/100images/S0021514_2016_RMLO.tif"
+                "100images/S0016188_2019_RMLO.tif"
             ],
             "mask_paths": [
-                "S0021514_2016_RMLO.tif.nrrd"
+                "S0016188_2019_RMLO.tif.nrrd"
             ],
-            "report": "The breast is heterogeneously dense with no findings."
+            "report": "The breast is of fatty predominance and presents a mass."
         }
     },
     {
-        "S0016526_2016_LCC.tif": {
+        "S0022761_2016_LMLO.tif": {
             "image_paths": [
-                "originals/100images/S0016526_2016_LCC.tif"
+                "100images/S0022761_2016_LMLO.tif"
             ],
             "mask_paths": [
-                "S0016526_2016_LCC.tif.nrrd"
+                "S0022761_2016_LMLO.tif.nrrd"
             ],
-            "report": "The breast is heterogeneously dense and presents calcifications."
+            "report": "The breast is characterized by scattered areas of pattern density and presents calcifications."
         }
     },
     {
-        "S0008656_2015_RCC.tif": {
+        "S0001362_2014_LCC.tif": {
             "image_paths": [
-                "originals/100images/S0008656_2015_RCC.tif"
+                "100images/S0001362_2014_LCC.tif"
             ],
             "mask_paths": [
-                "S0008656_2015_RCC.tif.nrrd"
+                "S0001362_2014_LCC.tif.nrrd"
             ],
-            "report": "The breast is heterogeneously dense and presents a mass."
+            "report": "The breast is moderately dense and presents a mass."
         }
     },
     {
-        "S0007889_2015_RCC.tif": {
+        "S0003923_2015_RMLO.tif": {
             "image_paths": [
-                "originals/100images/S0007889_2015_RCC.tif"
+                "100images/S0003923_2015_RMLO.tif"
             ],
             "mask_paths": [
-                "S0007889_2015_RCC.tif.nrrd"
+                "S0003923_2015_RMLO.tif.nrrd"
             ],
-            "report": "The breast is extremely dense and presents a mass."
-        }
-    },
-    {
-        "S0022956_2016_RCC.tif": {
-            "image_paths": [
-                "originals/100images/S0022956_2016_RCC.tif"
-            ],
-            "mask_paths": [
-                "S0022956_2016_RCC.tif.nrrd"
-            ],
-            "report": "The breast is characterized by scattered areas of pattern density with no findings."
+            "report": "The breast is characterized by scattered areas of pattern density and presents a mass and calcifications."
         }
     },
     {
         "S0023610_2016_RCC.tif": {
             "image_paths": [
-                "originals/100images/S0023610_2016_RCC.tif"
+                "100images/S0023610_2016_RCC.tif"
             ],
             "mask_paths": [
                 "S0023610_2016_RCC.tif.nrrd"
@@ -66,9 +55,42 @@
         }
     },
     {
+        "S0012918_2016_RCC.tif": {
+            "image_paths": [
+                "100images/S0012918_2016_RCC.tif"
+            ],
+            "mask_paths": [
+                "S0012918_2016_RCC.tif.nrrd"
+            ],
+            "report": "The breast is heterogeneously dense with no findings."
+        }
+    },
+    {
+        "S005288_2015_RCC.tif": {
+            "image_paths": [
+                "100images/S005288_2015_RCC.tif"
+            ],
+            "mask_paths": [
+                "S005288_2015_RCC.tif.nrrd"
+            ],
+            "report": "The breast is characterized by scattered areas of pattern density and presents calcifications."
+        }
+    },
+    {
+        "S0041026_2014_LMLO.tif": {
+            "image_paths": [
+                "100images/S0041026_2014_LMLO.tif"
+            ],
+            "mask_paths": [
+                "S0041026_2014_LMLO.tif.nrrd"
+            ],
+            "report": "The breast is of fatty predominance and presents calcifications."
+        }
+    },
+    {
         "S0001244_2016_LMLO.tif": {
             "image_paths": [
-                "originals/100images/S0001244_2016_LMLO.tif"
+                "100images/S0001244_2016_LMLO.tif"
             ],
             "mask_paths": [
                 "S0001244_2016_LMLO.tif.nrrd"
@@ -77,130 +99,42 @@
         }
     },
     {
-        "S0010064_2016_LCC.tif": {
+        "S0002732_2014_RCC.tif": {
             "image_paths": [
-                "originals/100images/S0010064_2016_LCC.tif"
+                "100images/S0002732_2014_RCC.tif"
             ],
             "mask_paths": [
-                "S0010064_2016_LCC.tif.nrrd"
+                "S0002732_2014_RCC.tif.nrrd"
             ],
-            "report": "The breast is characterized by scattered areas of pattern density with no findings."
+            "report": "The breast is of fatty predominance with no findings ."
         }
     },
     {
-        "S0021444_2016_RCC.tif": {
+        "S0002732_2014_LMLO.tif": {
             "image_paths": [
-                "originals/100images/S0021444_2016_RCC.tif"
+                "100images/S0002732_2014_LMLO.tif"
             ],
             "mask_paths": [
-                "S0021444_2016_RCC.tif.nrrd"
+                "S0002732_2014_LMLO.tif.nrrd"
             ],
-            "report": "The breast is extremely dense and presents calcifications."
+            "report": "The breast is of fatty predominance with no findings ."
         }
     },
     {
-        "S0023090_2016_LMLO.tif": {
+        "S0001362_2014_LMLO.tif": {
             "image_paths": [
-                "originals/100images/S0023090_2016_LMLO.tif"
+                "100images/S0001362_2014_LMLO.tif"
             ],
             "mask_paths": [
-                "S0023090_2016_LMLO.tif.nrrd"
+                "S0001362_2014_LMLO.tif.nrrd"
             ],
-            "report": "The breast is extremely dense and presents a mass."
-        }
-    },
-    {
-        "S0020725_2016_LMLO.tif": {
-            "image_paths": [
-                "originals/100images/S0020725_2016_LMLO.tif"
-            ],
-            "mask_paths": [
-                "S0020725_2016_LMLO.tif.nrrd"
-            ],
-            "report": "The breast is characterized by scattered areas of pattern density and presents a mass."
-        }
-    },
-    {
-        "S0022761_2016_RCC.tif": {
-            "image_paths": [
-                "originals/100images/S0022761_2016_RCC.tif"
-            ],
-            "mask_paths": [
-                "S0022761_2016_RCC.tif.nrrd"
-            ],
-            "report": "The breast is characterized by scattered areas of pattern density and presents a mass."
-        }
-    },
-    {
-        "S0045249_2014_RCC.tif": {
-            "image_paths": [
-                "originals/100images/S0045249_2014_RCC.tif"
-            ],
-            "mask_paths": [
-                "S0045249_2014_RCC.tif.nrrd"
-            ],
-            "report": "The breast is characterized by scattered areas of pattern density and presents a mass."
-        }
-    },
-    {
-        "S0004984_2015_RMLO.tif": {
-            "image_paths": [
-                "originals/100images/S0004984_2015_RMLO.tif"
-            ],
-            "mask_paths": [
-                "S0004984_2015_RMLO.tif.nrrd"
-            ],
-            "report": "The breast is extremely dense and presents a mass."
-        }
-    },
-    {
-        "S0008656_2015_RMLO.tif": {
-            "image_paths": [
-                "originals/100images/S0008656_2015_RMLO.tif"
-            ],
-            "mask_paths": [
-                "S0008656_2015_RMLO.tif.nrrd"
-            ],
-            "report": "The breast is heterogeneously dense and presents a mass."
-        }
-    },
-    {
-        "S0008781_2015_LCC.tif": {
-            "image_paths": [
-                "originals/100images/S0008781_2015_LCC.tif"
-            ],
-            "mask_paths": [
-                "S0008781_2015_LCC.tif.nrrd"
-            ],
-            "report": "The breast is of fatty predominance and presents a mass."
-        }
-    },
-    {
-        "S0009615_2015_RMLO.tif": {
-            "image_paths": [
-                "originals/100images/S0009615_2015_RMLO.tif"
-            ],
-            "mask_paths": [
-                "S0009615_2015_RMLO.tif.nrrd"
-            ],
-            "report": "The breast is heterogeneously dense and presents a mass and calcifications."
-        }
-    },
-    {
-        "S0023208_2016_RCC.tif": {
-            "image_paths": [
-                "originals/100images/S0023208_2016_RCC.tif"
-            ],
-            "mask_paths": [
-                "S0023208_2016_RCC.tif.nrrd"
-            ],
-            "report": "The breast is heterogeneously dense and presents a mass."
+            "report": "The breast is moderately dense and presents a mass."
         }
     },
     {
         "S0000204_2014_RMLO.tif": {
             "image_paths": [
-                "originals/100images/S0000204_2014_RMLO.tif"
+                "100images/S0000204_2014_RMLO.tif"
             ],
             "mask_paths": [
                 "S0000204_2014_RMLO.tif.nrrd"
@@ -209,25 +143,14 @@
         }
     },
     {
-        "S0003923_2015_RCC.tif": {
+        "S0023090_2016_RMLO.tif": {
             "image_paths": [
-                "originals/100images/S0003923_2015_RCC.tif"
+                "100images/S0023090_2016_RMLO.tif"
             ],
             "mask_paths": [
-                "S0003923_2015_RCC.tif.nrrd"
+                "S0023090_2016_RMLO.tif.nrrd"
             ],
-            "report": "The breast is characterized by scattered areas of pattern density and presents a mass and calcifications."
-        }
-    },
-    {
-        "S0021827_2016_LMLO.tif": {
-            "image_paths": [
-                "originals/100images/S0021827_2016_LMLO.tif"
-            ],
-            "mask_paths": [
-                "S0021827_2016_LMLO.tif.nrrd"
-            ],
-            "report": "The breast is of fatty predominance and presents calcifications."
+            "report": "The breast is extremely dense and presents a mass."
         }
     }
 ]
