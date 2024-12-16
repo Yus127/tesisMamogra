@@ -401,6 +401,8 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         images = batch['image']
+        images = images.to(self.device)
+
         text = batch['text']
         text = text.to(self.device)
         
@@ -425,6 +427,8 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         images = batch['image']
+        images = images.to(self.device)
+
         text = batch['text']
         text = text.to(self.device)
         
