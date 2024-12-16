@@ -352,6 +352,7 @@ class CLIPLinearProbe(pl.LightningModule):
         self.clip_model = clip_model
         self.class_descriptions = class_descriptions
         self.num_classes = len(class_descriptions)
+        print(class_descriptions)
 
 
         
@@ -396,6 +397,8 @@ class CLIPLinearProbe(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         images = batch['image']
         text = batch['text']
+        print("training")
+        print(text)
         text = text.to(self.device)
 
         # Get text embeddings using CLIP's text encoder
