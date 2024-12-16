@@ -2,7 +2,7 @@
     {
         "S0016188_2019_RMLO.tif": {
             "image_paths": [
-                "100images/S0016188_2019_RMLO.tif"
+                "originals/100images/S0016188_2019_RMLO.tif"
             ],
             "mask_paths": [
                 "S0016188_2019_RMLO.tif.nrrd"
@@ -13,7 +13,7 @@
     {
         "S0022761_2016_LMLO.tif": {
             "image_paths": [
-                "100images/S0022761_2016_LMLO.tif"
+                "originals/100images/S0022761_2016_LMLO.tif"
             ],
             "mask_paths": [
                 "S0022761_2016_LMLO.tif.nrrd"
@@ -24,7 +24,7 @@
     {
         "S0001362_2014_LCC.tif": {
             "image_paths": [
-                "100images/S0001362_2014_LCC.tif"
+                "originals/100images/S0001362_2014_LCC.tif"
             ],
             "mask_paths": [
                 "S0001362_2014_LCC.tif.nrrd"
@@ -35,7 +35,7 @@
     {
         "S0003923_2015_RMLO.tif": {
             "image_paths": [
-                "100images/S0003923_2015_RMLO.tif"
+                "originals/100images/S0003923_2015_RMLO.tif"
             ],
             "mask_paths": [
                 "S0003923_2015_RMLO.tif.nrrd"
@@ -46,7 +46,7 @@
     {
         "S0023610_2016_RCC.tif": {
             "image_paths": [
-                "100images/S0023610_2016_RCC.tif"
+                "originals/100images/S0023610_2016_RCC.tif"
             ],
             "mask_paths": [
                 "S0023610_2016_RCC.tif.nrrd"
@@ -57,7 +57,7 @@
     {
         "S0012918_2016_RCC.tif": {
             "image_paths": [
-                "100images/S0012918_2016_RCC.tif"
+                "originals/100images/S0012918_2016_RCC.tif"
             ],
             "mask_paths": [
                 "S0012918_2016_RCC.tif.nrrd"
@@ -68,7 +68,7 @@
     {
         "S005288_2015_RCC.tif": {
             "image_paths": [
-                "100images/S005288_2015_RCC.tif"
+                "originals/100images/S005288_2015_RCC.tif"
             ],
             "mask_paths": [
                 "S005288_2015_RCC.tif.nrrd"
@@ -79,7 +79,7 @@
     {
         "S0041026_2014_LMLO.tif": {
             "image_paths": [
-                "100images/S0041026_2014_LMLO.tif"
+                "originals/100images/S0041026_2014_LMLO.tif"
             ],
             "mask_paths": [
                 "S0041026_2014_LMLO.tif.nrrd"
@@ -90,7 +90,7 @@
     {
         "S0001244_2016_LMLO.tif": {
             "image_paths": [
-                "100images/S0001244_2016_LMLO.tif"
+                "originals/100images/S0001244_2016_LMLO.tif"
             ],
             "mask_paths": [
                 "S0001244_2016_LMLO.tif.nrrd"
@@ -101,7 +101,7 @@
     {
         "S0002732_2014_RCC.tif": {
             "image_paths": [
-                "100images/S0002732_2014_RCC.tif"
+                "originals/100images/S0002732_2014_RCC.tif"
             ],
             "mask_paths": [
                 "S0002732_2014_RCC.tif.nrrd"
@@ -112,7 +112,7 @@
     {
         "S0002732_2014_LMLO.tif": {
             "image_paths": [
-                "100images/S0002732_2014_LMLO.tif"
+                "originals/100images/S0002732_2014_LMLO.tif"
             ],
             "mask_paths": [
                 "S0002732_2014_LMLO.tif.nrrd"
@@ -123,7 +123,7 @@
     {
         "S0001362_2014_LMLO.tif": {
             "image_paths": [
-                "100images/S0001362_2014_LMLO.tif"
+                "originals/100images/S0001362_2014_LMLO.tif"
             ],
             "mask_paths": [
                 "S0001362_2014_LMLO.tif.nrrd"
@@ -134,7 +134,7 @@
     {
         "S0000204_2014_RMLO.tif": {
             "image_paths": [
-                "100images/S0000204_2014_RMLO.tif"
+                "originals/100images/S0000204_2014_RMLO.tif"
             ],
             "mask_paths": [
                 "S0000204_2014_RMLO.tif.nrrd"
@@ -145,7 +145,7 @@
     {
         "S0023090_2016_RMLO.tif": {
             "image_paths": [
-                "100images/S0023090_2016_RMLO.tif"
+                "originals/100images/S0023090_2016_RMLO.tif"
             ],
             "mask_paths": [
                 "S0023090_2016_RMLO.tif.nrrd"
