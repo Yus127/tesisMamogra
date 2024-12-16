@@ -353,8 +353,6 @@ class CLIPLinearProbe(pl.LightningModule):
         self.class_descriptions = class_descriptions
         self.num_classes = len(class_descriptions)
         print(class_descriptions)
-
-
         
         # Freeze CLIP model parameters 
         for param in clip_model.parameters():
@@ -422,11 +420,31 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         images = batch['image']
-        labels = batch['text']  # Using text field directly as labels
+        text_labels = batch['text']  # Using text field directly as labels
+        
+        # Convert text labels to integer indices if they're not already
+        if isinstance(text_labels, torch.Tensor):
+            if len(text_labels.shape) > 1:
+                # If labels are 2D or higher, flatten to 1D
+                labels = text_labels.squeeze()
+            else:
+                labels = text_labels
+        else:
+            # If labels are not a tensor, convert them
+            labels = torch.tensor(text_labels, dtype=torch.long)
+    
         labels = labels.to(self.device)
         
         # Forward pass through the linear probe
         logits = self(images)
+        
+        # Print shapes for debugging
+        print(f"Logits shape: {logits.shape}")
+        print(f"Labels shape: {labels.shape}")
+        print(f"Labels dtype: {labels.dtype}")
+        
+        # Ensure labels are the right type
+        labels = labels.long()
         
         # Compute loss and accuracy
         loss = self.loss_fn(logits, labels)
