@@ -66,12 +66,12 @@
         }
     },
     {
-        "S005288_2015_RCC.tif": {
+        "S0005288_2015_RCC.tif": {
             "image_paths": [
-                "originals/100images/S005288_2015_RCC.tif"
+                "originals/100images/S0005288_2015_RCC.tif"
             ],
             "mask_paths": [
-                "S005288_2015_RCC.tif.nrrd"
+                "S0005288_2015_RCC.tif.nrrd"
             ],
             "report": "The breast is characterized by scattered areas of pattern density and presents calcifications."
         }
