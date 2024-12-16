@@ -108,14 +108,14 @@ else:
 train_loader = DataLoader(
     dataset, 
     batch_size=32, 
-    #shuffle=True, 
+    shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
 val_loader = DataLoader(
     dataval, 
     batch_size=32, 
-    #shuffle=True, 
+    shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
@@ -123,7 +123,7 @@ val_loader = DataLoader(
 datatestload = DataLoader(
     datatest, 
     batch_size=32, 
-    #shuffle=True, 
+    shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
     )
 
