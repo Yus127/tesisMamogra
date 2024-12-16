@@ -420,46 +420,45 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         images = batch['image']
-        text_labels = batch['text']  # Using text field directly as labels
+        text_labels = batch['text']  # Shape: [14, 256]
         
-        # Convert text labels to integer indices if they're not already
-        if isinstance(text_labels, torch.Tensor):
-            if len(text_labels.shape) > 1:
-                # If labels are 2D or higher, flatten to 1D
-                labels = text_labels.squeeze()
-            else:
-                labels = text_labels
-        else:
-            # If labels are not a tensor, convert them
-            labels = torch.tensor(text_labels, dtype=torch.long)
-    
+        # If text_labels contains one-hot encodings or token IDs, we need to get a single label per sample
+        # For now, let's assume we want the first token/value from each row
+        labels = text_labels[:, 0]  # Take first element from each row to get shape [14]
         labels = labels.to(self.device)
         
         # Forward pass through the linear probe
-        logits = self(images)
+        logits = self(images)  # Current shape: [14, 17]
         
         # Print shapes for debugging
         print(f"Logits shape: {logits.shape}")
         print(f"Labels shape: {labels.shape}")
         print(f"Labels dtype: {labels.dtype}")
+        print(f"Unique labels: {torch.unique(labels).tolist()}")
         
         # Ensure labels are the right type
         labels = labels.long()
         
         # Compute loss and accuracy
-        loss = self.loss_fn(logits, labels)
-        preds = torch.argmax(logits, dim=1)
-        acc = torch.sum(preds == labels).float() / len(labels)
-        
-        # Print predictions and actual labels for debugging
-        print("Predictions:", preds.tolist())
-        print("Actual labels:", labels.tolist())
-        
-        # Log metrics
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_acc', acc, prog_bar=True)
-        
-        return {'val_loss': loss, 'val_acc': acc}
+        try:
+            loss = self.loss_fn(logits, labels)
+            preds = torch.argmax(logits, dim=1)
+            acc = torch.sum(preds == labels).float() / len(labels)
+            
+            # Print predictions and actual labels for debugging
+            print("Predictions:", preds.tolist())
+            print("Actual labels:", labels.tolist())
+            
+            # Log metrics
+            self.log('val_loss', loss, prog_bar=True)
+            self.log('val_acc', acc, prog_bar=True)
+            
+            return {'val_loss': loss, 'val_acc': acc}
+        except Exception as e:
+            print(f"Error in loss computation: {e}")
+            print(f"Logits min/max: {logits.min().item()}, {logits.max().item()}")
+            print(f"Labels min/max: {labels.min().item()}, {labels.max().item()}")
+            raise
     
 
     def configure_optimizers(self):
