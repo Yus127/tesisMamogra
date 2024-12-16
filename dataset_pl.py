@@ -107,8 +107,8 @@ class ComplexMedicalDataset(Dataset):
         for item in batch:
             # Handle each image in the batch
             for img in item['image']:  
-                all_images.append(img)
-            all_texts.append(item['text'])
+                all_images.append(img.to(device))
+            all_texts.append(item['text'].to(device))
         
         # Stack all images
         images = torch.stack(all_images).to(device)  
