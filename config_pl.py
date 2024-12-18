@@ -22,4 +22,4 @@ NUM_WORKERS = 19
 # Compute related
 ACCELERATOR = "gpu"
 DEVICES = [0]
-PRECISION = 16
+PRECISION = '16-mixed'
