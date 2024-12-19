@@ -20,14 +20,13 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class_descriptions = [
-    'The breast is moderately dense and presents calcifications.',
-       'The breast is characterized by scattered areas of pattern density and presents calcifications.',
+    'The breast is characterized by scattered areas of pattern density and presents calcifications.',
        'The breast is characterized by scattered areas of pattern density and presents a mass.',
        'The breast is extremely dense and presents a mass.',
        'The breast is characterized by scattered areas of pattern density with no findings.',
        'The breast is heterogeneously dense and presents a mass.',
        'The breast is extremely dense and presents calcifications.',
-       'The breast is of fatty predominance with no findings .',
+       'The breast is of fatty predominance with no findings.',
        'The breast is moderately dense and presents a mass.',
        'The breast is of fatty predominance and presents a mass.',
        'The breast is heterogeneously dense with no findings.',
@@ -68,31 +67,26 @@ lightning_model = LightningBiomedCLIP(
 """
 #print(lightning_model.model)
 
-# Initialize tokenizer
-#tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 
 # Create dataset instance
 dataset = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
-    #data_dir="/home/yus/test/tesisMamogra/train.json",
-
+    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
+    data_dir="/home/yus/test/tesisMamogra/train.json",
     processor=model,
     tokenizer=tokenizer
 )
 
 
 dataval = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
-
-    #data_dir="/home/yus/test/tesisMamogra/test.json",
+    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
+    data_dir="/home/yus/test/tesisMamogra/test.json",
     processor=model,
     tokenizer=tokenizer
 )
 
 datatest = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
-
-    #data_dir="/home/yus/test/tesisMamogra/test.json",
+    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
+    data_dir="/home/yus/test/tesisMamogra/test.json",
     processor=model,
     tokenizer=tokenizer
 )
@@ -129,7 +123,7 @@ datatestload = DataLoader(
 
 print(f"DataLoader configuration: {train_loader}")
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess)
+linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
 
 
 trainer = pl.Trainer(
