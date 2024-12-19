@@ -359,7 +359,7 @@ class CLIPLinearProbe(pl.LightningModule):
         self.preprocess = preprocess
         self.data_augmentation = data_augmentation
         self.num_classes = len(class_descriptions)
-        self.dropout_rate=0.2 
+        self.dropout_rate=0
         self.weight_decay=0.01
         self.learning_rate = 0.0001
         
@@ -415,15 +415,8 @@ class CLIPLinearProbe(pl.LightningModule):
         if self.classifier.bias is not None:
             nn.init.constant_(self.classifier.bias, 0)
         """
-        """
-        if self.classifier.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.classifier.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.classifier.bias, -bound, bound)
-        """
-        
     
-     # Helper method to ensure tensor is on the correct device
+    # Ensure tensor is on the correct device
     def _ensure_on_device(self, tensor, device=None):
         if device is None:
             device = self.device
@@ -437,8 +430,8 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Convert text tokens to class indices
         labels = self.get_class_index(text_tokens)
-        
         logits = self(images)
+
         # Compute loss with label smoothing
         loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
         
@@ -504,7 +497,7 @@ class CLIPLinearProbe(pl.LightningModule):
         print(f"Predictions: {predictions}")
 
     
-        return self.classifier(image_features) *5.0
+        return self.classifier(image_features) #*5.0
 
     
     def validation_step(self, batch, batch_idx):
@@ -514,8 +507,8 @@ class CLIPLinearProbe(pl.LightningModule):
         # Ensure inputs are on the correct device
         images = self._ensure_on_device(images)
         text_tokens = self._ensure_on_device(text_tokens)
-        print(f"Images shape: {images.shape}, de: {images}")
-        print(f"Text tokens shape: {text_tokens.shape}, de: {text_tokens}")
+        print(f"Images shape: {images.shape}")
+        print(f"Text tokens shape: {text_tokens.shape}")
 
         # Get labels and print intermediate values
         print("\nGenerating labels:")
@@ -568,21 +561,6 @@ class CLIPLinearProbe(pl.LightningModule):
         
         return loss
 
-
-
-    def zeroshot_prediction(self, x):
-        with torch.no_grad():
-            if x.device != self.device:
-                x = x.to(self.device)
-            image_features = self.clip_model.encode_image(x)
-            image_features = F.normalize(image_features, dim=-1)
-            
-            # Ensure class features are on the correct device
-            if self.class_text_features.device != self.device:
-                self.class_text_features = self.class_text_features.to(self.device)
-                
-            similarity = image_features @ self.class_text_features.t()
-            return similarity
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(

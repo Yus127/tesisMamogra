@@ -123,7 +123,7 @@ datatestload = DataLoader(
 
 print(f"DataLoader configuration: {train_loader}")
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
+linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, False)
 
 
 trainer = pl.Trainer(
@@ -141,5 +141,3 @@ trainer = pl.Trainer(
 
 trainer.fit(linear_probe, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
-#trainer.validate(lightning_model, datavalload)
-#trainer.test(lightning_model, datatestload)
