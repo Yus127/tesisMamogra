@@ -84,12 +84,6 @@ dataval = ComplexMedicalDataset(
     tokenizer=tokenizer
 )
 
-datatest = ComplexMedicalDataset(
-    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
-    data_dir="/home/yus/test/tesisMamogra/test.json",
-    processor=model,
-    tokenizer=tokenizer
-)
 
 print(f"Sample from dataset: {dataset[0]}")
 
@@ -108,14 +102,6 @@ train_loader = DataLoader(
 
 val_loader = DataLoader(
     dataval, 
-    batch_size=32, 
-    shuffle=True, 
-    collate_fn=ComplexMedicalDataset.collate_fn
-    )
-
-
-datatestload = DataLoader(
-    datatest, 
     batch_size=32, 
     shuffle=True, 
     collate_fn=ComplexMedicalDataset.collate_fn
