@@ -123,7 +123,7 @@ datatestload = DataLoader(
 
 print(f"DataLoader configuration: {train_loader}")
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, False)
+linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
 
 
 trainer = pl.Trainer(

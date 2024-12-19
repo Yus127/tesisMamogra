@@ -384,7 +384,7 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Data augmentation
         self.train_transforms = T.Compose([
-            #T.RandomHorizontalFlip(p=0.5),
+            T.RandomVerticalFlip(p=0.5),
             T.RandomRotation(10),
             T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
         ])
