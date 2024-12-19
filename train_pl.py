@@ -2,15 +2,15 @@ import torch
 import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader
 import nrrd
-from torchvision import transforms
 from typing import List, Optional
+from lightning.pytorch import Trainer
 
 from model_pl import LightningBiomedCLIP, CLIPLinearProbe
 from dataset_pl import ComplexMedicalDataset
 import config_pl
 
 from pytorch_lightning.callbacks import EarlyStopping
-
+from pytorch_lightning.loggers import TensorBoardLogger
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
 
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
@@ -18,6 +18,8 @@ tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_p
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 #print(dir(model))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+logger = TensorBoardLogger("tb_logs", name ="biomed_v0")
 
 class_descriptions = [
     'The breast is characterized by scattered areas of pattern density and presents calcifications.',
@@ -41,7 +43,7 @@ class_descriptions = [
 early_stop_callback = EarlyStopping(
         monitor='train_loss',      # quantity to monitor
         min_delta=0.00,          # minimum change to qualify as an improvement
-        patience=5,              # number of epochs with no improvement after which training will be stopped
+        patience=50,              # number of epochs with no improvement after which training will be stopped
         verbose=True,            # enable verbose mode
         mode='min'               # "min" means lower val_loss is better
     )
@@ -109,10 +111,11 @@ val_loader = DataLoader(
 
 print(f"DataLoader configuration: {train_loader}")
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
+linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, False)
 
 
 trainer = pl.Trainer(
+    logger=logger,
     accelerator=config_pl.ACCELERATOR,
     devices=config_pl.DEVICES,
     min_epochs=1,

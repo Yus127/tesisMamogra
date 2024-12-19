@@ -5,7 +5,7 @@ from torchmetrics.text import BLEUScore
 from transformers import get_linear_schedule_with_warmup
 import torch.nn.functional as F
 import torch.optim as optim
-
+import torchvision
 import torchvision.transforms as T
 
 from pytorch_lightning.callbacks import EarlyStopping
@@ -435,12 +435,15 @@ class CLIPLinearProbe(pl.LightningModule):
         # Compute loss with label smoothing
         loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
         
-        # Add L2 regularization
+        # L2 regularization
         l2_lambda = 0.01
         l2_norm = sum(p.pow(2.0).sum() for p in self.classifier.parameters())
         loss = loss + l2_lambda * l2_norm
         
         if batch_idx % 10 == 0:
+            x = images[:8]
+            grid = torchvision.utils.make_grid(x.view(-1,1,224,224))
+            self.logger.experiment.add_image("mamogram_images", grid, self.global_step )
             predictions = logits.argmax(dim=-1)
             print(f"\nTraining Batch {batch_idx}")
             print(f"Loss: {loss.item():.4f}")
@@ -572,7 +575,7 @@ class CLIPLinearProbe(pl.LightningModule):
             optimizer,
             mode='min',
             factor=0.5,
-            patience=3,
+            patience=50,
             verbose=True
         )
         return {
