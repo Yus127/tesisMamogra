@@ -359,7 +359,7 @@ class CLIPLinearProbe(pl.LightningModule):
         self.preprocess = preprocess
         self.data_augmentation = data_augmentation
         self.num_classes = len(class_descriptions)
-        self.dropout_rate=0
+        self.dropout_rate=0.2
         self.weight_decay=0.01
         self.learning_rate = 0.0001
         
@@ -485,11 +485,11 @@ class CLIPLinearProbe(pl.LightningModule):
             image_features = self.clip_model.encode_image(x)
             image_features = F.normalize(image_features, dim=-1)
             image_features = self.clip_model.encode_image(x)
-            print(f"Image features shape: {image_features.shape}, device: {image_features.device}")
+            #print(f"Image features shape: {image_features.shape}, device: {image_features.device}")
             image_features = F.normalize(image_features, dim=-1)
             logits = self.classifier(image_features)
-            print(f"Logits shape: {logits.shape}, device: {logits.device}")
-            print("Raw logits:", logits)
+            #print(f"Logits shape: {logits.shape}, device: {logits.device}")
+            #print("Raw logits:", logits)
             
         predictions = logits.argmax(dim=-1)
         
