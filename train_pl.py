@@ -8,6 +8,7 @@ from lightning.pytorch import Trainer
 from model_pl import LightningBiomedCLIP, CLIPLinearProbe
 from dataset_pl import ComplexMedicalDataset
 import config_pl
+from pytorch_lightning.loggers import TensorBoardLogger
 
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -19,7 +20,6 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 #print(dir(model))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-logger = TensorBoardLogger("tb_logs", name ="biomed_v0")
 
 class_descriptions = [
     'The breast is characterized by scattered areas of pattern density and presents calcifications.',
@@ -72,16 +72,16 @@ lightning_model = LightningBiomedCLIP(
 
 # Create dataset instance
 dataset = ComplexMedicalDataset(
-    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
-    data_dir="/home/yus/test/tesisMamogra/train.json",
+    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
+    #data_dir="/home/yus/test/tesisMamogra/train.json",
     processor=model,
     tokenizer=tokenizer
 )
 
 
 dataval = ComplexMedicalDataset(
-    #data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
-    data_dir="/home/yus/test/tesisMamogra/test.json",
+    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
+    #data_dir="/home/yus/test/tesisMamogra/test.json",
     processor=model,
     tokenizer=tokenizer
 )
@@ -114,6 +114,14 @@ print(f"DataLoader configuration: {train_loader}")
 linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, False)
 
 
+from pytorch_lightning.loggers import TensorBoardLogger
+
+#logger = TensorBoardLogger("lightning_logs", name="clip_probe")
+logger = TensorBoardLogger(
+    save_dir='lightning_logs',
+    name='clip_probe',
+    default_hp_metric=False
+)
 trainer = pl.Trainer(
     logger=logger,
     accelerator=config_pl.ACCELERATOR,
@@ -126,6 +134,8 @@ trainer = pl.Trainer(
     #deterministic=True
 
 ) 
+
+
 #trainer.tune, find the hpyerparameters
 
 trainer.fit(linear_probe, train_dataloaders=train_loader, val_dataloaders=val_loader)

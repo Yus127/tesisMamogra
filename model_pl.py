@@ -7,7 +7,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as T
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 from pytorch_lightning.callbacks import EarlyStopping
 
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
@@ -349,19 +350,22 @@ class CLIPLinearProbe(pl.LightningModule):
         tokenizer, 
         preprocess, 
         data_augmentation
-        
     ):
         super().__init__()
         
+        # Store initialization parameters
         self.class_descriptions = class_descriptions
         self.tokenizer = tokenizer
         self.clip_model = model
         self.preprocess = preprocess
         self.data_augmentation = data_augmentation
         self.num_classes = len(class_descriptions)
-        self.dropout_rate=0.2
-        self.weight_decay=0.01
+        self.dropout_rate = 0.2
+        self.weight_decay = 0.01
         self.learning_rate = 0.0001
+        
+        # Save hyperparameters for TensorBoard
+        self.save_hyperparameters(ignore=['model'])
         
         # Freeze CLIP parameters
         for param in self.clip_model.parameters():
@@ -374,13 +378,22 @@ class CLIPLinearProbe(pl.LightningModule):
             self.feature_dim = image_features.shape[1]
             
             # Encode class descriptions
-            if class_descriptions:
-                text_tokens = self.tokenizer([l for l in self.class_descriptions], context_length=17).to(self.device)
-                self.class_text_features = self.clip_model.encode_text(text_tokens)
-                print("class text features")
-                print(self.class_text_features)
-                self.class_text_features = F.normalize(self.class_text_features, dim=-1)
-                self.class_text_features = self.class_text_features.to(self.device)
+            text_tokens = self.tokenizer([l for l in self.class_descriptions], context_length=17).to(self.device)
+            self.class_text_features = self.clip_model.encode_text(text_tokens)
+            self.class_text_features = F.normalize(self.class_text_features, dim=-1)
+            self.class_text_features = self.class_text_features.to(self.device)
+
+            # Store similarities for later logging
+            self.similarities = self.class_text_features @ self.class_text_features.t()
+
+            # Print similarities for debugging
+            print("\nClass Description Similarities:")
+            for i in range(len(class_descriptions)):
+                most_similar = torch.topk(self.similarities[i], 3)
+                print(f"\nClass {i} most similar to:")
+                for sim, idx in zip(most_similar.values, most_similar.indices):
+                    if idx != i:
+                        print(f"Class {idx}: {sim:.3f}")
         
         # Data augmentation
         self.train_transforms = T.Compose([
@@ -389,40 +402,24 @@ class CLIPLinearProbe(pl.LightningModule):
             T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
         ])
 
-        # Linear probe layers with dropout
-        self.classifier = nn.Sequential(
-            nn.Dropout(self.dropout_rate),
-            nn.Linear(self.feature_dim, self.feature_dim // 2),
-            nn.ReLU(),
-            nn.Dropout(self.dropout_rate),
-            nn.Linear(self.feature_dim // 2, self.num_classes)
-        ).to(self.device)
-        
-        # Initialize weights
-        for m in self.classifier.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-                    
-        """
-        # Linear probe layer
-        self.classifier = nn.Linear(self.feature_dim, self.num_classes)
-        self.classifier = self.classifier.to(self.device)
+        # Classifier initialization
+        self.classifier = nn.Linear(self.feature_dim, self.num_classes).to(self.device)
+        nn.init.xavier_uniform_(self.classifier.weight, gain=1.4)
+        nn.init.zeros_(self.classifier.bias)
 
-        # Initialize weights manually
-        nn.init.xavier_uniform_(self.classifier.weight, gain=1.0)
-        if self.classifier.bias is not None:
-            nn.init.constant_(self.classifier.bias, 0)
-        """
-    
-    # Ensure tensor is on the correct device
-    def _ensure_on_device(self, tensor, device=None):
-        if device is None:
-            device = self.device
-        if tensor.device != device:
-            tensor = tensor.to(device)
-        return tensor
+    def on_fit_start(self):
+        """Called when fit begins; logger is guaranteed to exist at this point."""
+        if self.logger is not None:
+            # Log similarity matrix
+            fig = plt.figure(figsize=(10, 10))
+            sns.heatmap(self.similarities.cpu().numpy(), annot=True, fmt='.2f')
+            plt.title('Class Description Similarities')
+            self.logger.experiment.add_figure('class_similarities', fig, 0)
+            plt.close(fig)
+
+            # Log model graph
+            dummy_input = torch.zeros(1, self.feature_dim, device=self.device)
+            self.logger.experiment.add_graph(self.classifier, dummy_input)
 
     def training_step(self, batch, batch_idx):
         images, text_tokens = batch['image'], batch['text']
@@ -440,27 +437,116 @@ class CLIPLinearProbe(pl.LightningModule):
         l2_norm = sum(p.pow(2.0).sum() for p in self.classifier.parameters())
         loss = loss + l2_lambda * l2_norm
         
-        if batch_idx % 10 == 0:
+        # Log training metrics
+        acc = (logits.argmax(dim=-1) == labels).float().mean()
+        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_acc', acc, prog_bar=True)
+        self.log('l2_norm', l2_norm, prog_bar=False)
+        
+        # Periodically log visuals if logger exists
+        if self.logger is not None and batch_idx % 10 == 0:
+            # Log images
             x = images[:8]
             grid = torchvision.utils.make_grid(x.view(-1,1,224,224))
-            self.logger.experiment.add_image("mamogram_images", grid, self.global_step )
+            self.logger.experiment.add_image("training_samples", grid, self.global_step)
+            
+            # Log predictions
             predictions = logits.argmax(dim=-1)
+            
+            # Create prediction distribution plot
+            pred_hist = torch.zeros(self.num_classes)
+            for i in range(self.num_classes):
+                pred_hist[i] = (predictions == i).float().mean()
+            
+            fig = plt.figure(figsize=(10, 5))
+            plt.bar(range(self.num_classes), pred_hist.cpu().numpy())
+            plt.title('Prediction Distribution')
+            plt.xlabel('Class')
+            plt.ylabel('Frequency')
+            self.logger.experiment.add_figure('pred_distribution', fig, self.global_step)
+            plt.close(fig)
+            
+            # Log confusion matrix
+            confusion = torch.zeros(self.num_classes, self.num_classes)
+            for pred, label in zip(predictions, labels):
+                confusion[label][pred] += 1
+            
+            fig = plt.figure(figsize=(10, 10))
+            sns.heatmap(confusion.cpu().numpy(), annot=True, fmt='g')
+            plt.title('Confusion Matrix')
+            plt.xlabel('Predicted')
+            plt.ylabel('Actual')
+            self.logger.experiment.add_figure('confusion_matrix', fig, self.global_step)
+            plt.close(fig)
+            
             print(f"\nTraining Batch {batch_idx}")
             print(f"Loss: {loss.item():.4f}")
             print("Predictions:", predictions.tolist())
             print("Actual:", labels.tolist())
         
-        acc = (logits.argmax(dim=-1) == labels).float().mean()
-        self.log('train_loss', loss, prog_bar=True)
-        self.log('train_acc', acc, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        images, text_tokens = batch['image'], batch['text']
+        
+        images = self._ensure_on_device(images)
+        text_tokens = self._ensure_on_device(text_tokens)
+        
+        labels = self.get_class_index(text_tokens)
+        labels = self._ensure_on_device(labels)
+        
+        n_tta = 5  # Test Time Augmentation
+        all_logits = []
+        for _ in range(n_tta):
+            logits = self(images)
+            all_logits.append(logits)
+        
+        logits = torch.stack(all_logits).mean(0)
+        logits = self._ensure_on_device(logits)
+        predictions = logits.argmax(dim=-1)
+        
+        loss = F.cross_entropy(logits, labels)
+        acc = (predictions == labels).float().mean()
+        
+        self.log('val_loss', loss, prog_bar=True)
+        self.log('val_acc', acc, prog_bar=True)
+        
+        # Log validation visuals if logger exists
+        if self.logger is not None and batch_idx == 0:
+            # Log confusion matrix
+            confusion = torch.zeros(self.num_classes, self.num_classes)
+            for pred, label in zip(predictions, labels):
+                confusion[label][pred] += 1
+            
+            fig = plt.figure(figsize=(10, 10))
+            sns.heatmap(confusion.cpu().numpy(), annot=True, fmt='g')
+            plt.title('Validation Confusion Matrix')
+            plt.xlabel('Predicted')
+            plt.ylabel('Actual')
+            self.logger.experiment.add_figure('val_confusion_matrix', fig, self.global_step)
+            plt.close(fig)
+            
+            # Log validation samples
+            grid = torchvision.utils.make_grid(images[:8].view(-1,1,224,224))
+            self.logger.experiment.add_image("validation_samples", grid, self.global_step)
         
         return loss
 
-    def register_text_features(self):
-        with torch.no_grad():
-            text_tokens =  self.tokenizer([l for l in self.class_descriptions], context_length=17).to(self.device)
-            self.text_features = self.clip_model.encode_text(text_tokens)
-            self.text_features = F.normalize(self.text_features, dim=-1)
+    def on_train_epoch_end(self):
+        """Log histograms at the end of each training epoch."""
+        if self.logger is not None:
+            for name, param in self.classifier.named_parameters():
+                self.logger.experiment.add_histogram(f'classifier/{name}', param, self.current_epoch)
+                if param.grad is not None:
+                    self.logger.experiment.add_histogram(f'classifier/{name}_grad', param.grad, self.current_epoch)
+
+    # Existing methods remain the same
+    def _ensure_on_device(self, tensor, device=None):
+        if device is None:
+            device = self.device
+        if tensor.device != device:
+            tensor = tensor.to(device)
+        return tensor
     
     def get_class_index(self, text_tokens):
         with torch.no_grad():
@@ -479,91 +565,14 @@ class CLIPLinearProbe(pl.LightningModule):
             indices = similarity.argmax(dim=-1)
             return indices
 
+
     def forward(self, x):
         with torch.no_grad():
-            # Apply augmentation during training
             if self.training and self.data_augmentation:
                 x = self.train_transforms(x)
-
             image_features = self.clip_model.encode_image(x)
             image_features = F.normalize(image_features, dim=-1)
-            image_features = self.clip_model.encode_image(x)
-            #print(f"Image features shape: {image_features.shape}, device: {image_features.device}")
-            image_features = F.normalize(image_features, dim=-1)
-            logits = self.classifier(image_features)
-            #print(f"Logits shape: {logits.shape}, device: {logits.device}")
-            #print("Raw logits:", logits)
-            
-        predictions = logits.argmax(dim=-1)
-        
-        print("\nResults:")
-        print(f"Predictions: {predictions}")
-
-    
-        return self.classifier(image_features) #*5.0
-
-    
-    def validation_step(self, batch, batch_idx):
-        print("inside validation")
-        images, text_tokens = batch['image'], batch['text']
-        
-        # Ensure inputs are on the correct device
-        images = self._ensure_on_device(images)
-        text_tokens = self._ensure_on_device(text_tokens)
-        print(f"Images shape: {images.shape}")
-        print(f"Text tokens shape: {text_tokens.shape}")
-
-        # Get labels and print intermediate values
-        print("\nGenerating labels:")
-        with torch.no_grad():
-            text_features = self.clip_model.encode_text(text_tokens)
-            print(f"Text features shape: {text_features.shape}, device: {text_features.device}")
-            text_features = F.normalize(text_features, dim=-1)
-            self.class_text_features = self._ensure_on_device(self.class_text_features)
-            print(f"Class text features shape: {self.class_text_features.shape}, device: {self.class_text_features.device}")
-            similarity = text_features @ self.class_text_features.t()
-            print(f"Similarity matrix shape: {similarity.shape}")
-            print("Similarity values:", similarity)
-            labels = similarity.argmax(dim=-1)
-            print("Generated labels:", labels)
-        
-            
-        # Convert text tokens to class indices
-        labels = self.get_class_index(text_tokens)
-        labels = self._ensure_on_device(labels)
-        
-       # Multiple forward passes with different augmentations
-        n_tta = 5  # Test Time Augmentation
-        all_logits = []
-        
-        for _ in range(n_tta):
-            logits = self(images)
-            all_logits.append(logits)
-        
-        # Average predictions
-        logits = torch.stack(all_logits).mean(0)
-        logits = self._ensure_on_device(logits)
-        predictions = logits.argmax(dim=-1)
-        
-        print("\nValidation Batch Results:")
-        print("=" * 50)
-        for i, (pred, actual) in enumerate(zip(predictions, labels)):
-            print(f"\nImage {i}:")
-            print(f"Actual class   : {actual.item()} - {self.class_descriptions[actual.item()]}")
-            print(f"Predicted class: {pred.item()} - {self.class_descriptions[pred.item()]}")
-        
-        loss = F.cross_entropy(logits, labels)
-        print("predictions")
-        print(predictions)
-        print("labels")
-        print(labels)
-        acc = (predictions == labels).float().mean()
-        
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_acc', acc, prog_bar=True)
-        
-        return loss
-
+        return self.classifier(image_features)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
