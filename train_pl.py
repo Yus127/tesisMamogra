@@ -21,24 +21,9 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class_descriptions = [
-    'The breast is characterized by scattered areas of pattern density and presents calcifications.',
-       'The breast is characterized by scattered areas of pattern density and presents a mass.',
-       'The breast is extremely dense and presents a mass.',
-       'The breast is characterized by scattered areas of pattern density with no findings.',
-       'The breast is heterogeneously dense and presents a mass.',
-       'The breast is extremely dense and presents calcifications.',
-       'The breast is of fatty predominance with no findings.',
-       'The breast is moderately dense and presents a mass.',
-       'The breast is of fatty predominance and presents a mass.',
-       'The breast is heterogeneously dense with no findings.',
-       'The breast is of fatty predominance and presents calcifications.',
-       'The breast is heterogeneously dense and presents a mass and calcifications.',
-       'The breast is heterogeneously dense and presents calcifications.',
-       'The breast is characterized by scattered areas of pattern density and presents a mass and calcifications.',
-       'The breast is extremely dense with no findings.',
-       'The breast is moderately dense with no findings.'
-    ]
+class_descriptions = ['Characterized by scattered areas of pattern density',
+       'Extremely dense', 'Heterogeneously dense', 'Fatty predominance',
+       'Moderately dense']
 
 early_stop_callback = EarlyStopping(
         monitor='train_loss',      # quantity to monitor
@@ -111,7 +96,7 @@ val_loader = DataLoader(
 
 print(f"DataLoader configuration: {train_loader}")
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, False)
+linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
 
 
 from pytorch_lightning.loggers import TensorBoardLogger

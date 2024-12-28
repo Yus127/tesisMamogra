@@ -10,6 +10,7 @@ import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pytorch_lightning.callbacks import EarlyStopping
+import numpy as np
 
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
 import math
@@ -405,7 +406,7 @@ class CLIPLinearProbe(pl.LightningModule):
         # Classifier initialization
         self.classifier = nn.Linear(self.feature_dim, self.num_classes).to(self.device)
         nn.init.xavier_uniform_(self.classifier.weight, gain=1.4)
-        nn.init.zeros_(self.classifier.bias)
+        #nn.init.zeros_(self.classifier.bias)
 
     def on_fit_start(self):
         """Called when fit begins; logger is guaranteed to exist at this point."""
@@ -427,7 +428,10 @@ class CLIPLinearProbe(pl.LightningModule):
         
         # Convert text tokens to class indices
         labels = self.get_class_index(text_tokens)
-        logits = self(images)
+        #logits = self(images)
+        logit_scale = 100.0  # You can adjust this temperature value as needed
+        logits = (logit_scale * images @ text_tokens.t()).detach().softmax(dim=-1)
+        sorted_indices = torch.argsort(logits, dim=-1, descending=True)
 
         # Compute loss with label smoothing
         loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
@@ -487,21 +491,26 @@ class CLIPLinearProbe(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        images, text_tokens = batch['image'], batch['text']
+        #images, text_tokens = batch['image'], batch['text']
+        image_features, text_features, logit_scale = self.clip_model(batch['image'], batch['text'])
+
         
-        images = self._ensure_on_device(images)
-        text_tokens = self._ensure_on_device(text_tokens)
+        image_features = self._ensure_on_device(image_features)
+        text_features = self._ensure_on_device(text_features)
         
-        labels = self.get_class_index(text_tokens)
+        labels = self.get_class_index(text_features)
         labels = self._ensure_on_device(labels)
         
         n_tta = 5  # Test Time Augmentation
+        """
         all_logits = []
         for _ in range(n_tta):
-            logits = self(images)
+            logits = self(image_features)
             all_logits.append(logits)
-        
-        logits = torch.stack(all_logits).mean(0)
+        """
+        logits = (100 * image_features @ text_features.t()).detach().softmax(dim=-1)
+
+        #logits = torch.stack(all_logits).mean(0)
         logits = self._ensure_on_device(logits)
         predictions = logits.argmax(dim=-1)
         
@@ -563,6 +572,9 @@ class CLIPLinearProbe(pl.LightningModule):
 
             similarity = text_features @ self.class_text_features.t()
             indices = similarity.argmax(dim=-1)
+            #logit_scale = 100.0  # You can adjust this temperature value as needed
+            #logits = (logit_scale * image_features @ text_features.t()).detach().softmax(dim=-1)
+            #sorted_indices = torch.argsort(logits, dim=-1, descending=True)
             return indices
 
 
