@@ -1,8 +1,4 @@
-import os
-import json
 import warnings
-from PIL import Image
-import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -13,44 +9,94 @@ from transformers import CLIPProcessor, CLIPModel
 # Suppress warnings about TypedStorage
 warnings.filterwarnings('ignore', message='TypedStorage is deprecated')
 
+import os
+import json
+import torch
+from PIL import Image
+import numpy as np
+
 class ImageReportDataset(Dataset):
     def __init__(self, data_dir):
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
         """
         Initialize dataset from a JSON file containing mammogram data
         Args:
             data_dir (str): Path to JSON file containing dataset information
         """
+        # Add logging to check data loading
         self.base_path = os.path.dirname(data_dir)
         
         # Load and parse JSON data
         with open(data_dir, 'r') as f:
             data_list = json.load(f)
-            
-        # Restructure data for easier access
+        print(f"Loaded {len(data_list)} samples from JSON")
+
+        # Setup image transformation pipeline
+        self.transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomAffine(
+                degrees=10, 
+                translate=(0.1, 0.1),
+                scale=(0.9, 1.1)
+            ),
+            transforms.ToTensor(),
+        ])
+        
+        # Restructure data and add logging
         self.samples = []
         for item in data_list:
             for image_name, content in item.items():
                 if 'image_paths' in content and 'report' in content:
-                    self.samples.append({
-                        'image_name': image_name,
-                        'image_path': content['image_paths'][0],  # Taking first image path
-                        'report': content['report']
-                    })
-        
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-        
-        # Setup image transformation pipeline
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ])
+                    report = content['report'].strip()  # Remove extra whitespace
+                    if len(report) > 0:  # Only add if report is not empty
+                        self.samples.append({
+                            'image_name': image_name,
+                            'image_path': content['image_paths'][0],
+                            'report': report
+                        })
+        print(f"Processed {len(self.samples)} valid samples")
     
     def process_image(self, image_path):
-        """Process a single image"""
+        """
+        Process a single image, handling both regular images and TIFF/TIF files
+        """
         try:
             full_path = os.path.join(self.base_path, image_path)
-            img = Image.open(full_path).convert('RGB')
-            processed_img = self.transform(img)  # Will return tensor of shape [3, 224, 224]
+            
+            # Open the image
+            img = Image.open(full_path)
+            
+            # Handle TIFF/TIF specific processing
+            if img.format in ['TIFF', 'TIF']:
+                # Convert to numpy array
+                img_array = np.array(img)
+                
+                # Handle different bit depths
+                if img_array.dtype != np.uint8:
+                    # Normalize to 8-bit range
+                    img_array = ((img_array - img_array.min()) * (255.0 / (img_array.max() - img_array.min()))).astype(np.uint8)
+                
+                # Handle different channel configurations
+                if len(img_array.shape) == 2:  # Single channel
+                    # Convert to RGB by duplicating the channel
+                    img_array = np.stack([img_array] * 3, axis=-1)
+                elif len(img_array.shape) == 3:
+                    if img_array.shape[2] == 1:  # Single channel in 3D
+                        img_array = np.concatenate([img_array] * 3, axis=2)
+                    elif img_array.shape[2] == 4:  # RGBA
+                        img_array = img_array[:, :, :3]  # Take only RGB channels
+                
+                # Convert back to PIL
+                img = Image.fromarray(img_array)
+            else:
+                # For non-TIF images, convert to RGB
+                img = img.convert('RGB')
+            
+            # Apply the standard transformation pipeline
+            processed_img = self.transform(img)
             return processed_img
             
         except Exception as e:
@@ -148,39 +194,7 @@ def evaluate_predictions(model, dataloader, device, num_examples=5):
             'logits_per_text': logits_per_text.cpu()[:num_examples]
         }
 
-def print_predictions(predictions, dataset, num_examples=5):
-    """
-    Print prediction results in a readable format
-    Args:
-        predictions: dict containing evaluation results
-        dataset: dataset containing the samples
-        num_examples: number of examples to show
-    """
-    if predictions is None:
-        print("No predictions to show")
-        return
-        
-    for i in range(min(num_examples, len(predictions['image_preds']))):
-        print(f"\nExample {i+1}:")
-        print("=" * 50)
-        
-        # Get actual text for this example
-        actual_text = dataset.samples[i]['report']
-        print(f"Actual Text: {actual_text}")
-        
-        # Get predicted text (based on image)
-        pred_idx = predictions['image_preds'][i].item()
-        pred_text = dataset.samples[pred_idx]['report']
-        confidence = predictions['image_scores'][i][pred_idx].item()
-        print(f"Predicted Text (confidence: {confidence:.3f}): {pred_text}")
-        
-        # Show top-3 text predictions
-        logits = predictions['logits_per_image'][i]
-        top_3_scores, top_3_indices = logits.topk(min(3, len(logits)))
-        print("\nTop 3 Text Predictions:")
-        for score, idx in zip(top_3_scores, top_3_indices):
-            text = dataset.samples[idx]['report']
-            print(f"Score: {score:.3f} - {text[:100]}...")
+
 
 def calculate_metrics(logits_per_image, logits_per_text):
     """
@@ -218,9 +232,19 @@ def calculate_metrics(logits_per_image, logits_per_text):
         'mean_top5': (i2t_top5 + t2i_top5) / 2
     }
 
-def print_predictions(eval_results, dataset, num_examples=5):
-    """Print prediction results in a readable format"""
-    for i in range(num_examples):
+def print_predictions(predictions, dataset, num_examples=5):
+    """
+    Print prediction results in a readable format
+    Args:
+        predictions: dict containing evaluation results
+        dataset: dataset containing the samples
+        num_examples: number of examples to show
+    """
+    if predictions is None:
+        print("No predictions to show")
+        return
+        
+    for i in range(min(num_examples, len(predictions['image_preds']))):
         print(f"\nExample {i+1}:")
         print("=" * 50)
         
@@ -229,43 +253,34 @@ def print_predictions(eval_results, dataset, num_examples=5):
         print(f"Actual Text: {actual_text}")
         
         # Get predicted text (based on image)
-        pred_idx = eval_results['image_preds'][i].item()
+        pred_idx = predictions['image_preds'][i].item()
         pred_text = dataset.samples[pred_idx]['report']
-        confidence = eval_results['image_scores'][i][pred_idx].item()
+        confidence = predictions['image_scores'][i][pred_idx].item()
         print(f"Predicted Text (confidence: {confidence:.3f}): {pred_text}")
         
         # Show top-3 text predictions
-        top_3_scores, top_3_indices = eval_results['logits_per_image'][i].topk(3)
+        logits = predictions['logits_per_image'][i]
+        top_3_scores, top_3_indices = logits.topk(min(3, len(logits)))
         print("\nTop 3 Text Predictions:")
         for score, idx in zip(top_3_scores, top_3_indices):
             text = dataset.samples[idx]['report']
             print(f"Score: {score:.3f} - {text[:100]}...")
-    batch_size = logits_per_image.size(0)
-    ground_truth = torch.arange(batch_size, device=logits_per_image.device)
+
+def calculate_loss(logits_per_image, logits_per_text, ground_truth):
+    # Temperature scaling
+    temperature = 0.07
+    logits_per_image = logits_per_image / temperature
+    logits_per_text = logits_per_text / temperature
     
-    # Image to text retrieval accuracy
-    image_pred = logits_per_image.argmax(dim=-1)
-    i2t_accuracy = (image_pred == ground_truth).float().mean().item()
+    # Calculate InfoNCE loss
+    loss_img = nn.CrossEntropyLoss()(logits_per_image, ground_truth)
+    loss_txt = nn.CrossEntropyLoss()(logits_per_text, ground_truth)
     
-    # Text to image retrieval accuracy
-    text_pred = logits_per_text.argmax(dim=-1)
-    t2i_accuracy = (text_pred == ground_truth).float().mean().item()
+    # Add contrastive loss component
+    similarity = nn.CosineSimilarity()(logits_per_image, logits_per_text)
+    contrastive_loss = (1 - similarity).mean()
     
-    # Calculate top-5 accuracy
-    _, top5_image_pred = logits_per_image.topk(5, dim=-1)
-    i2t_top5 = (top5_image_pred == ground_truth.unsqueeze(-1)).any(dim=-1).float().mean().item()
-    
-    _, top5_text_pred = logits_per_text.topk(5, dim=-1)
-    t2i_top5 = (top5_text_pred == ground_truth.unsqueeze(-1)).any(dim=-1).float().mean().item()
-    
-    return {
-        'i2t_accuracy': i2t_accuracy,
-        't2i_accuracy': t2i_accuracy,
-        'i2t_top5': i2t_top5,
-        't2i_top5': t2i_top5,
-        'mean_accuracy': (i2t_accuracy + t2i_accuracy) / 2,
-        'mean_top5': (i2t_top5 + t2i_top5) / 2
-    }
+    return (loss_img + loss_txt) / 2 + 0.1 * contrastive_loss
 
 def train_clip_model(train_data_path, val_data_path, num_epochs=30, batch_size=32, learning_rate=5e-5):
     """
@@ -284,7 +299,14 @@ def train_clip_model(train_data_path, val_data_path, num_epochs=30, batch_size=3
     print(f"Using device: {device}")
     
     # Initialize model and datasets
-    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    model = CLIPModel.from_pretrained(
+            "openai/clip-vit-base-patch32",
+            ignore_mismatched_sizes=True  # Add this parameter
+        ).to(device)
+    
+    
+  
+
     train_dataset = ImageReportDataset(train_data_path)
     val_dataset = ImageReportDataset(val_data_path)
     
@@ -310,12 +332,31 @@ def train_clip_model(train_data_path, val_data_path, num_epochs=30, batch_size=3
         lr=learning_rate,
         betas=(0.9, 0.98),
         eps=1e-6,
-        weight_decay=0.2
+        weight_decay=0.01
     )
+     # Add learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, 
+        T_max=num_epochs,
+        eta_min=learning_rate/100
+    )
+   
     loss_img = nn.CrossEntropyLoss()
     loss_txt = nn.CrossEntropyLoss()
     
     best_val_loss = float('inf')
+
+    # Freeze base layers initially
+    for param in model.vision_model.parameters():
+        param.requires_grad = False
+    for param in model.text_model.parameters():
+        param.requires_grad = False
+        
+    # Train only top layers for first few epochs
+    print("Training top layers only...")
+    #for epoch in range(5):
+    #    train_epoch(...)
+    
     
     # Training loop
     for epoch in range(num_epochs):
@@ -339,8 +380,9 @@ def train_clip_model(train_data_path, val_data_path, num_epochs=30, batch_size=3
             
             # Compute loss
             ground_truth = torch.arange(len(images), dtype=torch.long, device=device)
-            loss = (loss_img(logits_per_image, ground_truth) + 
-                   loss_txt(logits_per_text, ground_truth)) / 2
+            loss = calculate_loss(logits_per_image, logits_per_text, ground_truth)
+            #loss = (loss_img(logits_per_image, ground_truth) + 
+            #       loss_txt(logits_per_text, ground_truth)) / 2
             
             # Backward pass
             loss.backward()
@@ -491,9 +533,31 @@ if __name__ == "__main__":
     train_data_path ="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json"
 
     val_data_path ="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json"
-
     
-    # Train the model
+    # Create datasets for evaluation
+    train_dataset = ImageReportDataset(train_data_path)
+    val_dataset = ImageReportDataset(val_data_path)
+    
+
+    import matplotlib.pyplot as plt
+
+    # Create dataset
+
+    # Retrieve a sample
+    image, text_tensor = train_dataset[0]
+
+    # Convert image tensor to numpy for visualization
+    image_np = image.permute(1, 2, 0).numpy()
+
+    # Display image
+    plt.imshow(image_np)
+    plt.title("Sample Image")
+    plt.show()
+
+    # Print corresponding text tensor
+    print("Text Tensor:", text_tensor)
+
+     # Train the model
     model = train_clip_model(
         train_data_path,
         val_data_path,
@@ -501,11 +565,7 @@ if __name__ == "__main__":
         batch_size=32,
         learning_rate=5e-5
     )
-    
-    # Create datasets for evaluation
-    train_dataset = ImageReportDataset(train_data_path)
-    val_dataset = ImageReportDataset(val_data_path)
-    
+
     # Evaluate on both training and validation sets
     print("\nEvaluating on Training Set:")
     train_results = evaluate_model(model, train_dataset, device="cuda" if torch.cuda.is_available() else "cpu")
