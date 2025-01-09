@@ -13,12 +13,12 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
+from pytorch_lightning.loggers import TensorBoardLogger
 
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-print(dir(model))
-
+#print(dir(model))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -100,7 +100,6 @@ print(f"DataLoader configuration: {train_loader}")
 linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
 
 
-from pytorch_lightning.loggers import TensorBoardLogger
 
 #logger = TensorBoardLogger("lightning_logs", name="clip_probe")
 logger = TensorBoardLogger(
@@ -125,4 +124,3 @@ trainer = pl.Trainer(
 #trainer.tune, find the hpyerparameters
 
 trainer.fit(linear_probe, train_dataloaders=train_loader, val_dataloaders=val_loader)
-

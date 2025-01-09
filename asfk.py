@@ -6,9 +6,6 @@ from tqdm import tqdm
 import clip
 from transformers import CLIPProcessor, CLIPModel
 
-# Suppress warnings about TypedStorage
-warnings.filterwarnings('ignore', message='TypedStorage is deprecated')
-
 import os
 import json
 import torch
