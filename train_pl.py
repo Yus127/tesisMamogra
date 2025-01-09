@@ -17,7 +17,8 @@ from open_clip import create_model_from_pretrained, get_tokenizer # works on ope
 tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 # Initialize BioMedCLIP model and preprocessor
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-#print(dir(model))
+print(dir(model))
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
