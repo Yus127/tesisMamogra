@@ -6,7 +6,7 @@ from transformers import get_linear_schedule_with_warmup
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
-import torchvision.transforms as T
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pytorch_lightning.callbacks import EarlyStopping
@@ -127,7 +127,6 @@ class LightningBiomedCLIP(pl.LightningModule):
         # Get logits
         logits = self(images)  # [batch_size, vocab_size]
         ce_loss = self.criterion(logits, texts[:, 0])
-        #print(logits)
         
         # Generate complete sequences
         generated_seqs = self.generate(images)  # [batch_size, seq_len]
@@ -177,7 +176,6 @@ class LightningBiomedCLIP(pl.LightningModule):
         # Get logits
         logits = self(images)  # [batch_size, vocab_size]
         ce_loss = self.criterion(logits, texts[:, 0])
-        #print(logits)
         
         # Generate complete sequences
         generated_seqs = self.generate(images)  # [batch_size, seq_len]
@@ -228,7 +226,6 @@ class LightningBiomedCLIP(pl.LightningModule):
         # Get logits
         logits = self(images)  # [batch_size, vocab_size]
         ce_loss = self.criterion(logits, texts[:, 0])
-        #print(logits)
         
         # Generate complete sequences
         generated_seqs = self.generate(images)  # [batch_size, seq_len]
@@ -343,51 +340,42 @@ class LightningBiomedCLIP(pl.LightningModule):
 Linear probe, I added a extra layer to clasiffy the images into 17 categories 
 """
 class CLIPLinearProbe(pl.LightningModule):
-    def __init__(
-        self,
-        model,
-        class_descriptions,
-        tokenizer, 
-        preprocess, 
-        data_augmentation
-    ):
-        super().__init__()
-        
-        # Store initialization parameters
-        self.class_descriptions = class_descriptions
-        self.tokenizer = tokenizer
+    def __init__(self, model, class_descriptions, tokenizer):
+        super(CLIPLinearProbe, self).__init__()
+
         self.clip_model = model
-        self.preprocess = preprocess
-        self.data_augmentation = data_augmentation
-        self.num_classes = len(class_descriptions)
+        # Freeze model parameters
+        for param in self.clip_model.parameters():
+            param.requires_grad = False
+        
+        self.tokenizer = tokenizer      
+
         self.dropout_rate = 0.2
         self.weight_decay = 0.01
         self.learning_rate = 0.0001
+
+        # Define an index for each class description
+        self.class_description_indices = {desc: i for i, desc in enumerate(class_descriptions)}
+        self.num_classes = len(self.class_description_indices)
         
         # Save hyperparameters for TensorBoard
         self.save_hyperparameters(ignore=['model'])
         
-        # Freeze CLIP parameters
-        for param in self.clip_model.parameters():
-            param.requires_grad = False
+        
             
         # Get CLIP image embedding dimension
         with torch.no_grad():
+            ''' TODO: Dejar el cálculo de la dimensión de embedding de imagen parametrizada como lo tenía Yus
             dummy_image = torch.zeros(1, 3, 224, 224, device=self.device)
             image_features = self.clip_model.encode_image(dummy_image)
             self.feature_dim = image_features.shape[1]
-            print(self.feature_dim)
-            
-            # Encode class descriptions
-            text_tokens = self.tokenizer([l for l in self.class_descriptions], context_length=17).to(self.device)
-            
-            self.class_text_features = self.clip_model.encode_text(text_tokens)
-            print("the len of class text features")
-            print(len(self.class_text_features))
-            print(self.class_text_features)
+            '''
+            ### Dimensiones de embedding hardcoded
+            self.feature_dim = 512
 
-            #self.class_text_features = F.normalize(self.class_text_features, dim=-1)
-            self.class_text_features = self.class_text_features.to(self.device)
+            # Encode class descriptions
+            text_tokens = self.tokenizer([l for l in self.class_descriptions], context_length=17)
+            self.class_text_features = self.clip_model.encode_text(text_tokens)
 
             # Store similarities for later logging
             self.similarities = self.class_text_features @ self.class_text_features.t()
@@ -400,16 +388,9 @@ class CLIPLinearProbe(pl.LightningModule):
                 for sim, idx in zip(most_similar.values, most_similar.indices):
                     if idx != i:
                         print(f"Class {idx}: {sim:.3f}")
-        
-        # Data augmentation
-        self.train_transforms = T.Compose([
-            T.RandomVerticalFlip(p=0.5),
-            T.RandomRotation(10),
-            T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
-        ])
 
         # Classifier initialization
-        self.classifier = nn.Linear(self.feature_dim, self.num_classes).to(self.device)
+        self.classifier = nn.Linear(self.feature_dim, self.num_classes)
         nn.init.xavier_uniform_(self.classifier.weight, gain=1.4)
         nn.init.zeros_(self.classifier.bias)
 
@@ -417,7 +398,8 @@ class CLIPLinearProbe(pl.LightningModule):
         if self.logger is not None:
             # Log similarity matrix
             fig = plt.figure(figsize=(10, 10))
-            sns.heatmap(self.similarities.cpu().numpy(), annot=True, fmt='.2f')
+            similarities_np = self.similarities.numpy(force=True)
+            sns.heatmap(similarities_np, annot=True, fmt='.2f')
             plt.title('Class Description Similarities')
             self.logger.experiment.add_figure('class_similarities', fig, 0)
             plt.close(fig)
@@ -428,10 +410,9 @@ class CLIPLinearProbe(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         images, text_tokens = batch['image'], batch['text']
-        text_tokens = text_tokens.to(self.device)
         
         # Convert text tokens to class indices
-        labels = self.get_class_index(text_tokens)
+        # labels = self.get_class_index(text_tokens)
         logits = self(images)
 
         # Compute loss with label smoothing
@@ -544,45 +525,20 @@ class CLIPLinearProbe(pl.LightningModule):
                 self.logger.experiment.add_histogram(f'classifier/{name}', param, self.current_epoch)
                 if param.grad is not None:
                     self.logger.experiment.add_histogram(f'classifier/{name}_grad', param.grad, self.current_epoch)
-
-    # Existing methods remain the same
-    def _ensure_on_device(self, tensor, device=None):
-        if device is None:
-            device = self.device
-        if tensor.device != device:
-            tensor = tensor.to(device)
-        return tensor
     
     def get_class_index(self, text_tokens):
         with torch.no_grad():
             # Encode the input text
-            print("text tokens of get class index")
-            print(text_tokens)
-            text_features = self.clip_model.encode_text(text_tokens)
-            print("text_features")
-            print(text_features)
-
-            #text_features = F.normalize(text_features, dim=-1)
-            
-            text_features = self._ensure_on_device(text_features)
-
-            # Compare with class descriptions
-                        
-            self.class_text_features = self._ensure_on_device(self.class_text_features)
-
+            text_features = self.clip_model.encode_text(text_tokens)      
             similarity = text_features @ self.class_text_features.t()
             indices = similarity.argmax(dim=-1)
-            print("indices")
-            print(indices)
             return indices
-
+        
 
     def forward(self, x):
         with torch.no_grad():
-            if self.training and self.data_augmentation:
-                x = self.train_transforms(x)
             image_features = self.clip_model.encode_image(x)
-            #image_features = F.normalize(image_features, dim=-1)
+
         return self.classifier(image_features)
 
     def configure_optimizers(self):

@@ -20,7 +20,7 @@ jsonCopy{
 """
 class ComplexMedicalDataset(Dataset):
     def __init__(self, data_dir:str, tokenizer, train:bool=True, transform=None):
-        super(ComplexMedicalDataset).__init__()
+        super(ComplexMedicalDataset, self).__init__()
         self.data_dir = data_dir
         self.tokenizer = tokenizer
         self.transform = transform
@@ -54,8 +54,8 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, tokenizer, transforms:dict, batch_size:int=32, num_workers:int=19):
-        super(MyDatamodule).__init__()
+    def __init__(self, data_dir:str, tokenizer, transforms:dict, batch_size:int=32, num_workers:int=1):
+        super(MyDatamodule, self).__init__()
 
         # Dataset info
         self.data_dir = data_dir
@@ -142,8 +142,8 @@ def _test_MyDatamodule():
         data_dir=os.getenv("DATA_DIR"),
         tokenizer=tokenizer,
         transforms={'train': train_transform, 'test': train_transform},
-        batch_size=32,
-        num_workers=19)
+        batch_size=2,
+        num_workers=1)
 
     myMedicalDataModule.setup()
 
