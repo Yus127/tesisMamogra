@@ -376,11 +376,17 @@ class CLIPLinearProbe(pl.LightningModule):
             dummy_image = torch.zeros(1, 3, 224, 224, device=self.device)
             image_features = self.clip_model.encode_image(dummy_image)
             self.feature_dim = image_features.shape[1]
+            print(self.feature_dim)
             
             # Encode class descriptions
             text_tokens = self.tokenizer([l for l in self.class_descriptions], context_length=17).to(self.device)
+            
             self.class_text_features = self.clip_model.encode_text(text_tokens)
-            self.class_text_features = F.normalize(self.class_text_features, dim=-1)
+            print("the len of class text features")
+            print(len(self.class_text_features))
+            print(self.class_text_features)
+
+            #self.class_text_features = F.normalize(self.class_text_features, dim=-1)
             self.class_text_features = self.class_text_features.to(self.device)
 
             # Store similarities for later logging
@@ -408,7 +414,6 @@ class CLIPLinearProbe(pl.LightningModule):
         nn.init.zeros_(self.classifier.bias)
 
     def on_fit_start(self):
-        """Called when fit begins; logger is guaranteed to exist at this point."""
         if self.logger is not None:
             # Log similarity matrix
             fig = plt.figure(figsize=(10, 10))
@@ -551,9 +556,13 @@ class CLIPLinearProbe(pl.LightningModule):
     def get_class_index(self, text_tokens):
         with torch.no_grad():
             # Encode the input text
+            print("text tokens of get class index")
+            print(text_tokens)
             text_features = self.clip_model.encode_text(text_tokens)
+            print("text_features")
+            print(text_features)
 
-            text_features = F.normalize(text_features, dim=-1)
+            #text_features = F.normalize(text_features, dim=-1)
             
             text_features = self._ensure_on_device(text_features)
 
@@ -563,6 +572,8 @@ class CLIPLinearProbe(pl.LightningModule):
 
             similarity = text_features @ self.class_text_features.t()
             indices = similarity.argmax(dim=-1)
+            print("indices")
+            print(indices)
             return indices
 
 
@@ -571,7 +582,7 @@ class CLIPLinearProbe(pl.LightningModule):
             if self.training and self.data_augmentation:
                 x = self.train_transforms(x)
             image_features = self.clip_model.encode_image(x)
-            image_features = F.normalize(image_features, dim=-1)
+            #image_features = F.normalize(image_features, dim=-1)
         return self.classifier(image_features)
 
     def configure_optimizers(self):
