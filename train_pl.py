@@ -35,68 +35,6 @@ early_stop_callback = EarlyStopping(
     )
 
 
-
-"""
-lightning_model = LightningBiomedCLIP(
-    model=model,
-    tokenizer=tokenizer,
-    clip_hidden_size = config_pl.CLIP_HIDDEN_SIZE,
-    learning_rate =config_pl.LEARNING_RATE,
-    weight_decay=config_pl.WEIGHT_DECAY,
-    warmup_steps = config_pl.WARMUP_STEPS,
-    hidden_size=config_pl.HIDDEN_SIZE,
-    vocab_size=tokenizer.tokenizer.vocab_size,
-    max_length=config_pl.MAX_LENGHT,
-    bos_token_id=config_pl.BOS_TOKEN_ID,  
-    eos_token_id=config_pl.EOS_TOKEN_ID,
-    pad_token_id=config_pl.PAD_TOKEN_ID
-    
-)
-"""
-#print(lightning_model.model)
-
-
-# Create dataset instance
-dataset = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/train.json",
-    #data_dir="/home/yus/test/tesisMamogra/train.json",
-    processor=model,
-    tokenizer=tokenizer
-)
-
-
-dataval = ComplexMedicalDataset(
-    data_dir="/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/test.json",
-    #data_dir="/home/yus/test/tesisMamogra/test.json",
-    processor=model,
-    tokenizer=tokenizer
-)
-
-
-print(f"Sample from dataset: {dataset[0]}")
-
-if torch.any(dataset[4]["image"] != 0):
-    print("Tensor contains non-zero values.")
-else:
-    print("Tensor is full of zeros.")
-
-# Create DataLoader
-train_loader = DataLoader(
-    dataset, 
-    batch_size=32, 
-    shuffle=True, 
-    collate_fn=ComplexMedicalDataset.collate_fn
-    )
-
-val_loader = DataLoader(
-    dataval, 
-    batch_size=32, 
-    shuffle=True, 
-    collate_fn=ComplexMedicalDataset.collate_fn
-    )
-
-print(f"DataLoader configuration: {train_loader}")
-
 linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer, preprocess, True)
 
 
@@ -120,7 +58,18 @@ trainer = pl.Trainer(
 
 ) 
 
+train_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((224, 224)),
+    ])
+
+myMedicalDataModule = MyDatamodule(
+        data_dir = os.getenv("DATA_DIR"),
+        tokenizer=tokenizer,
+        transforms={'train': train_transform, 'test': train_transform},
+        batch_size=32,
+        num_workers=19)
 
 #trainer.tune, find the hpyerparameters
 
-trainer.fit(linear_probe, train_dataloaders=train_loader, val_dataloaders=val_loader)
+trainer.fit(linear_probe, myMedicalDataModule)
