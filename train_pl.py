@@ -1,35 +1,39 @@
 import os
 import torch
-import pytorch_lightning as pl
-
-from pytorch_lightning.callbacks import EarlyStopping
-from pytorch_lightning.loggers import TensorBoardLogger
+import lightning as L
+from lightning.pytorch.callbacks import EarlyStopping
+from lightning.pytorch.loggers import TensorBoardLogger
 from torchvision import transforms
+import torchvision.transforms as T
+
+from open_clip import create_model_from_pretrained # works on open-clip-torch>=2.23.0, timm>=0.9.8
 
 from model_pl import CLIPLinearProbe
 import config_pl
-import torchvision.transforms as T
-from open_clip import create_model_from_pretrained, get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
 from dataset_pl import MyDatamodule
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+torch.set_float32_matmul_precision('medium') 
 
-tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
 
 class_descriptions = [
-    'Characterized by scattered areas of pattern density',
-    'Extremely dense',
-    'Heterogeneously dense',
-    'Fatty predominance',
-    'Moderately dense'
+    "Characterized by scattered areas of pattern density",
+    "Fatty predominance",
+    "Extremely dense"
     ]
 
-linear_probe = CLIPLinearProbe(model, class_descriptions, tokenizer)
+linear_probe = CLIPLinearProbe(
+    model=model, 
+    class_descriptions=class_descriptions, 
+    learning_rate=config_pl.LEARNING_RATE, 
+    weight_decay=config_pl.WEIGHT_DECAY, 
+    dropout_rate=config_pl.DROPOUT_RATE,
+    )
 
 early_stop_callback = EarlyStopping(
-        monitor='train_loss',      # quantity to monitor
+        monitor='val_epoch_loss',  # quantity to monitor
         min_delta=0.00,            # minimum change to qualify as an improvement
         patience=50,               # number of epochs with no improvement after which training will be stopped
         verbose=True,              # enable verbose mode
@@ -37,12 +41,12 @@ early_stop_callback = EarlyStopping(
     )
 
 logger = TensorBoardLogger(
-    save_dir='lightning_logs',
+    save_dir='david_test',
     name='clip_probe',
     default_hp_metric=False
 )
 
-trainer = pl.Trainer(
+trainer = L.Trainer(
     logger=logger,
     accelerator=config_pl.ACCELERATOR,
     devices=config_pl.DEVICES,
@@ -61,11 +65,15 @@ train_transform = T.Compose([
         T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
     ])
 
+test_transform = T.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((224, 224))
+    ])
+
 myMedicalDataModule = MyDatamodule(
         data_dir = os.getenv("DATA_DIR"),
-        tokenizer=tokenizer,
-        transforms={'train': train_transform, 'test': train_transform},
-        batch_size=32,
-        num_workers=19)
+        transforms={'train': train_transform, 'test': test_transform},
+        batch_size=config_pl.BATCH_SIZE,
+        num_workers=config_pl.NUM_WORKERS)
 
 trainer.fit(model=linear_probe, datamodule=myMedicalDataModule)

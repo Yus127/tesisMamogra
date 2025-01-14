@@ -1,13 +1,13 @@
-import os
 import json
+import os
+
 import cv2
 import torch
-from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
-import lightning as L
-from dotenv import load_dotenv
+from torch.utils.data import Dataset, DataLoader
 
-load_dotenv()
+import config_pl
+import lightning as L
 
 """Expected JSON Structure
 jsonCopy{
@@ -19,10 +19,9 @@ jsonCopy{
 }
 """
 class ComplexMedicalDataset(Dataset):
-    def __init__(self, data_dir:str, tokenizer, train:bool=True, transform=None):
+    def __init__(self, data_dir:str, train:bool=True, transform=None):
         super(ComplexMedicalDataset, self).__init__()
         self.data_dir = data_dir
-        self.tokenizer = tokenizer
         self.transform = transform
 
         if train:
@@ -48,18 +47,17 @@ class ComplexMedicalDataset(Dataset):
             image = self.transform(image)
 
         # Load text
-        text = self.tokenizer(item_dict[unique_key]['report'])
+        text = item_dict[unique_key]['report']
         
         return {"image": image, "text": text}
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, tokenizer, transforms:dict, batch_size:int=32, num_workers:int=1):
+    def __init__(self, data_dir:str, transforms:dict, batch_size:int=32, num_workers:int=1):
         super(MyDatamodule, self).__init__()
 
         # Dataset info
         self.data_dir = data_dir
-        self.tokenizer = tokenizer
         self.transforms = transforms
         # Dataloaders info
         self.batch_size = batch_size
@@ -73,7 +71,6 @@ class MyDatamodule(L.LightningDataModule):
         # Load all training data
         training_data = ComplexMedicalDataset(
             data_dir=self.data_dir,
-            tokenizer=self.tokenizer,
             train=True,
             transform=self.transforms['train']
         )
@@ -82,7 +79,7 @@ class MyDatamodule(L.LightningDataModule):
         self.train_dataset, self.validation_dataset = torch.utils.data.random_split(training_data, [0.8, 0.2])
 
         # Load test data
-        self.test_dataset = ComplexMedicalDataset(data_dir=self.data_dir, tokenizer=self.tokenizer, train=False, transform=self.transforms['test'])
+        self.test_dataset = ComplexMedicalDataset(data_dir=self.data_dir, train=False, transform=self.transforms['test'])
 
     def train_dataloader(self):
         return DataLoader(
@@ -116,8 +113,7 @@ def _test_ComplexMedicalDataset():
         transforms.Resize((224, 224)),
     ])
 
-    tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
-    myMedicalDataset = ComplexMedicalDataset(data_dir=os.getenv("DATA_DIR"), tokenizer=tokenizer, transform=train_transform)
+    myMedicalDataset = ComplexMedicalDataset(data_dir=config_pl.DATA_DIR, transform=train_transform)
 
     first_item = myMedicalDataset.__getitem__(0)
 
@@ -137,10 +133,8 @@ def _test_MyDatamodule():
         transforms.Resize((224, 224)),
     ])
 
-    tokenizer = get_tokenizer('hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224')
     myMedicalDataModule = MyDatamodule(
-        data_dir=os.getenv("DATA_DIR"),
-        tokenizer=tokenizer,
+        data_dir=config_pl.DATA_DIR,
         transforms={'train': train_transform, 'test': train_transform},
         batch_size=2,
         num_workers=1)
@@ -192,7 +186,6 @@ def _test_MyDatamodule():
 
 
 if __name__ == "__main__":
-    from open_clip import get_tokenizer # works on open-clip-torch>=2.23.0, timm>=0.9.8
     import matplotlib.pyplot as plt
 
     _test_ComplexMedicalDataset()
