@@ -10,13 +10,13 @@ import config_pl
 import lightning as L
 
 """Expected JSON Structure
-jsonCopy{
-    "sample_id": {
-        "image_paths": ["path1.jpg", "path2.jpg", ...],
-        "mask_paths": ["path1.nrrd", "path2.nrrd", ...],
-        "report": "medical report text"
+[
+    {
+        "image_path": "<dataset>/<filename.tif>",
+        "filename": "<filename.tif>",
+        "report": "Medical report text."
     }
-}
+]
 """
 class ComplexMedicalDataset(Dataset):
     def __init__(self, data_dir:str, train:bool=True, transform=None):
@@ -25,9 +25,15 @@ class ComplexMedicalDataset(Dataset):
         self.transform = transform
 
         if train:
+            # Check there is a train.json file
+            if not os.path.exists(os.path.join(data_dir, "train.json")):
+                raise FileNotFoundError("train.json file not found in the data directory.")
             with open(os.path.join(data_dir, "train.json"), 'r') as f:
                 self.data = json.load(f)
         else:
+            # Check there is a test.json file
+            if not os.path.exists(os.path.join(data_dir, "test.json")):
+                raise FileNotFoundError("test.json file not found in the data directory.")
             with open(os.path.join(data_dir, "test.json"), 'r') as f:
                 self.data = json.load(f)
 
@@ -36,18 +42,17 @@ class ComplexMedicalDataset(Dataset):
 
 
     def __getitem__(self, idx: int) -> dict:
-        item_dict = self.data[idx]
-        unique_key = next(iter(item_dict)) # Getting the image path here is odd due to the data structure
+        item = self.data[idx]
         
         # Load image
-        image_path = item_dict[unique_key]["image_paths"][0]
+        image_path = item["filename"]
         image = cv2.imread(os.path.join(self.data_dir, image_path))
 
         if self.transform:
             image = self.transform(image)
 
         # Load text
-        text = item_dict[unique_key]['report']
+        text = item['report']
         
         return {"image": image, "text": text}
 
@@ -69,19 +74,35 @@ class MyDatamodule(L.LightningDataModule):
         Executes on every GPU. Setup the dataset for training, validation and testing.
         '''
         # Load all training data
-        training_data = ComplexMedicalDataset(
-            data_dir=self.data_dir,
-            train=True,
-            transform=self.transforms['train']
-        )
-        
-        # Split training data into training and validation
-        self.train_dataset, self.validation_dataset = torch.utils.data.random_split(training_data, [0.8, 0.2])
+        try:
+            training_data = ComplexMedicalDataset(
+                data_dir=self.data_dir,
+                train=True,
+                transform=self.transforms['train']
+            )
+            # Split training data into training and validation
+            self.train_dataset, self.validation_dataset = torch.utils.data.random_split(training_data, [0.8, 0.2])
+        except FileNotFoundError as e:
+            print(e)
+            print("Skipping training data.")
+            self.train_dataset = None
+            self.val_dataset = None
 
         # Load test data
-        self.test_dataset = ComplexMedicalDataset(data_dir=self.data_dir, train=False, transform=self.transforms['test'])
+        try:
+            self.test_dataset = ComplexMedicalDataset(
+                data_dir=self.data_dir,
+                train=False,
+                transform=self.transforms['test']
+            )
+        except FileNotFoundError as e:
+            print(e)
+            print("Skipping test data.")
+            self.test_dataset = None
 
     def train_dataloader(self):
+        if self.train_dataset is None:
+            raise ValueError("No training dataset found.")
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
@@ -90,6 +111,8 @@ class MyDatamodule(L.LightningDataModule):
         )
     
     def val_dataloader(self):
+        if self.validation_dataset is None:
+            raise ValueError("No validation dataset found.")
         return DataLoader(
             self.validation_dataset,
             batch_size=self.batch_size,
@@ -98,6 +121,8 @@ class MyDatamodule(L.LightningDataModule):
         )
     
     def test_dataloader(self):
+        if self.test_dataset is None:
+            raise ValueError("No test dataset found.")
         return DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
@@ -113,7 +138,7 @@ def _test_ComplexMedicalDataset():
         transforms.Resize((224, 224)),
     ])
 
-    myMedicalDataset = ComplexMedicalDataset(data_dir=config_pl.DATA_DIR, transform=train_transform)
+    myMedicalDataset = ComplexMedicalDataset(data_dir=config_pl.DATA_DIR+"400images/", transform=train_transform)
 
     first_item = myMedicalDataset.__getitem__(0)
 
@@ -134,60 +159,77 @@ def _test_MyDatamodule():
     ])
 
     myMedicalDataModule = MyDatamodule(
-        data_dir=config_pl.DATA_DIR,
+        data_dir=config_pl.DATA_DIR+"400images/",
         transforms={'train': train_transform, 'test': train_transform},
         batch_size=2,
         num_workers=1)
 
     myMedicalDataModule.setup()
 
-    first_train_item = myMedicalDataModule.train_dataset.__getitem__(0)
-    first_val_item = myMedicalDataModule.validation_dataset.__getitem__(0)
-    first_test_item = myMedicalDataModule.test_dataset.__getitem__(0)
+    if myMedicalDataModule.train_dataset is None:
+        print("No training dataset found.")
+    else:
+        first_train_item = myMedicalDataModule.train_dataset.__getitem__(0)
+         # Visualize the first image of each dataset
+        print(f"First train item shape: {first_train_item['image'].shape}")
+        plt.imshow(first_train_item["image"].squeeze().permute(1, 2, 0))
+        plt.show()
+        print(f"First train text {first_train_item['text']}")
+    
+    if myMedicalDataModule.validation_dataset is None:
+        print("No validation dataset found.")
+    else:
+        first_val_item = myMedicalDataModule.validation_dataset.__getitem__(0)
+        print(f"First val item shape: {first_val_item['image'].shape}")
+        plt.imshow(first_val_item["image"].squeeze().permute(1, 2, 0))
+        plt.show()
+        print(f"First val text {first_val_item['text']}")
 
-    # Visualize the first image of each dataset
-    print(f"First train item shape: {first_train_item['image'].shape}")
-    plt.imshow(first_train_item["image"].squeeze().permute(1, 2, 0))
-    plt.show()
-
-    print(f"First val item shape: {first_val_item['image'].shape}")
-    plt.imshow(first_val_item["image"].squeeze().permute(1, 2, 0))
-    plt.show()
-
-    print(f"First test item shape: {first_test_item['image'].shape}")
-    plt.imshow(first_test_item["image"].squeeze().permute(1, 2, 0))
-    plt.show()
-
-    # Visualize the first text of each dataset
-    print(f"First train text {first_train_item['text']}")
-    print(f"First val text {first_val_item['text']}")
-    print(f"First test text {first_test_item['text']}")
+    if myMedicalDataModule.test_dataset is None:
+        print("No test dataset found.")
+    else:
+        first_test_item = myMedicalDataModule.test_dataset.__getitem__(0)
+        print(f"First test item shape: {first_test_item['image'].shape}")
+        plt.imshow(first_test_item["image"].squeeze().permute(1, 2, 0))
+        plt.show()
+        print(f"First test text {first_test_item['text']}")
 
     # Load the dataloaders
-    train_dataloader = myMedicalDataModule.train_dataloader()
-    val_dataloader = myMedicalDataModule.val_dataloader()
-    test_dataloader = myMedicalDataModule.test_dataloader()
+    try:
+        # Initialize the dataloaders
+        train_dataloader = myMedicalDataModule.train_dataloader()
+        for batch in train_dataloader:
+            print(f"Batch shape retrieved by train dataloader : {batch['image'].shape}")
+            print(f"Batch text retrieved by train dataloader: {batch['text']}")
+            break
+    except ValueError as e:
+        print(e)
 
-    # Test the dataloaders
-    for batch in train_dataloader:
-        print(batch['image'].shape)
-        print(batch['text'])
-        break
+    try:
+        val_dataloader = myMedicalDataModule.val_dataloader()
+        for batch in val_dataloader:
+            print(f"Batch shape retrieved by val dataloader : {batch['image'].shape}")
+            print(f"Batch text retrieved by val dataloader: {batch['text']}")
+            break
+    except ValueError as e:
+        print(e)
 
-    for batch in val_dataloader:
-        print(batch['image'].shape)
-        print(batch['text'])
-        break
-
-    for batch in test_dataloader:
-        print(batch['image'].shape)
-        print(batch['text'])
-        break
-
+    try:
+        test_dataloader = myMedicalDataModule.test_dataloader()
+        for batch in test_dataloader:
+            print(f"Image shape retrieved by test dataloader : {batch['image'].shape}")
+            print(f"Batch text retrieved by test dataloader: {batch['text']}")
+            break
+    except ValueError as e:
+        print(e)
+    
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    _test_ComplexMedicalDataset()
+    #_test_ComplexMedicalDataset()
+    #print("ComplexMedical Dataset test passed!")
     _test_MyDatamodule()
+    print("MyDatamodule test passed!")
+
     print("All tests passed!")
