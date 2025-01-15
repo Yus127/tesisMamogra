@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
-from torchmetrics.text import BLEUScore
 import lightning as L
-from transformers import get_linear_schedule_with_warmup
 
-"""
+#from torchmetrics.text import BLEUScore
+#from transformers import get_linear_schedule_with_warmup
+
+""" TODO: Clean this classes
 Text generation or image-captioning model using a pretrained CLIP model as a base 
 for extracting image features, and adding a custom captioning head for generating 
 text descriptions based on those features
-"""
 
 class CaptioningHead(nn.Module):
     def __init__(self, clip_hidden_size: int, vocab_size: int, hidden_size: int ):
@@ -257,9 +257,9 @@ class LightningBiomedCLIP(L.LightningModule):
 
     
     def generate(self, images, max_length=None, temperature=1.0, top_k=50):
-        """
-        Generate complete token sequences using top-k sampling
-        """
+        
+        # Generate complete token sequences using top-k sampling
+        
         if max_length is None:
             max_length = self.max_length
             
@@ -326,8 +326,10 @@ class LightningBiomedCLIP(L.LightningModule):
                 'interval': 'step'
             }
         }
-
 """
+
+
+""" TODO: Clean logging methods and calls
 Linear probe, I added a extra layer to clasiffy the images into N categories 
 """
 class CLIPLinearProbe(L.LightningModule):
@@ -402,22 +404,24 @@ class CLIPLinearProbe(L.LightningModule):
         image, text = batch['image'], batch['text']
         
         # Get label index
-        try:
-            label = self.class_text.index(text)
-        except ValueError:
-            raise ValueError(f"Class description '{text}' not found in target classes.")
+        labels = torch.Tensor(len(text)).type(torch.LongTensor).to(self.device)
+        for idx, t in enumerate(text):
+            if t not in self.class_text:
+                raise ValueError(f"Class description '{t}' not found in target classes.")
+            labels[idx] = torch.tensor(self.class_text.index(t))
         
         # Compute logits
         logits = self(image)
 
         # Compute loss
-        loss = F.cross_entropy(logits, label, label_smoothing=0.1)
+        #TODO: clean: loss = F.cross_entropy(logits, label, label_smoothing=0.1)
+        loss = F.cross_entropy(logits, labels)
         
         # L2 regularization
         l2_lambda = 0.01
-        l2_norm = sum(p**2 for p in self.classifier.parameters())
+        l2_norm = sum(torch.sum(param ** 2) for param in self.classifier.parameters())       
         loss = loss + l2_lambda * l2_norm
-        self.training_loss += loss.item()
+        self.epoch_loss += loss.item()
         
         # Log training metrics
         self.log('batch_loss', loss, prog_bar=True)
@@ -465,6 +469,10 @@ class CLIPLinearProbe(L.LightningModule):
             print("Actual:", labels.tolist())
         '''
         
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+
         return loss
 
     def on_train_epoch_end(self):
@@ -477,7 +485,7 @@ class CLIPLinearProbe(L.LightningModule):
         TODO: Consultar con Yus""" 
         acc = self.accuracy.compute()
         train_epoch_loss = self.epoch_loss / self.trainer.num_training_batches
-        self.log('train_epoch_loss', train_epoch_loss, prog_bar=True)
+        self.log('train_epoch_loss', train_epoch_loss, prog_bar=True) 
         self.log('train_epoch_acc', acc, prog_bar=True)
         # Reset loss for next epoch
         self.epoch_loss = 0
@@ -486,29 +494,35 @@ class CLIPLinearProbe(L.LightningModule):
         image, text = batch['image'], batch['text']
         
         # Get label index
-        try:
-            label = self.class_text.index(text)
-        except ValueError:
-            raise ValueError(f"Class description '{text}' not found in target classes.")
+        labels = torch.Tensor(len(text)).type(torch.LongTensor).to(self.device)
+        for idx, t in enumerate(text):
+            if t not in self.class_text:
+                raise ValueError(f"Class description '{t}' not found in target classes.")
+            labels[idx] = torch.tensor(self.class_text.index(t))
         
         with torch.no_grad():
             logits = self(image)
 
         # Compute loss
-        loss = F.cross_entropy(logits, label, label_smoothing=0.1)
+        # TODO: clean: loss = F.cross_entropy(logits, label, label_smoothing=0.1)
+        loss = F.cross_entropy(logits, labels)
         self.epoch_loss += loss.item()
 
         # Log validation metrics
         self.log('batch_val_loss', loss, prog_bar=True)
+        # Update metrics
+        predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(predictions, labels)
+
         return loss
     
     def on_validation_epoch_end(self):
         acc = self.accuracy.compute()
-        val_epoch_loss = self.training_loss / self.trainer.num_training_batches
+        val_epoch_loss = self.epoch_loss / self.trainer.num_training_batches
         self.log('val_epoch_loss', val_epoch_loss, prog_bar=True)
         self.log('val_epoch_acc', acc, prog_bar=True)
         # Reset loss for next epoch
-        self.training_loss = 0
+        self.epoch_loss = 0
 
     def forward(self, x):
         with torch.no_grad():
@@ -532,6 +546,6 @@ class CLIPLinearProbe(L.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "monitor": "val_loss"
+                "monitor": "val_epoch_loss"
             }
         }

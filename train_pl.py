@@ -1,4 +1,3 @@
-import os
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping
@@ -21,7 +20,9 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 class_descriptions = [
     "Characterized by scattered areas of pattern density",
     "Fatty predominance",
-    "Extremely dense"
+    "Extremely dense",
+    "Heterogeneously dense",
+    "Moderately dense"
     ]
 
 linear_probe = CLIPLinearProbe(
@@ -42,7 +43,7 @@ early_stop_callback = EarlyStopping(
 
 logger = TensorBoardLogger(
     save_dir='david_test',
-    name='clip_probe',
+    name='linear_probe',
     default_hp_metric=False
 )
 
@@ -50,11 +51,9 @@ trainer = L.Trainer(
     logger=logger,
     accelerator=config_pl.ACCELERATOR,
     devices=config_pl.DEVICES,
-    min_epochs=1,
     max_epochs=config_pl.NUM_EPOCHS,
-    precision=config_pl.PRECISION,
-    log_every_n_steps = 3,
-    callbacks=[early_stop_callback]
+    callbacks=[early_stop_callback],
+    precision=config_pl.PRECISION
 ) 
 
 train_transform = T.Compose([
@@ -71,7 +70,7 @@ test_transform = T.Compose([
     ])
 
 myMedicalDataModule = MyDatamodule(
-        data_dir = os.getenv("DATA_DIR"),
+        data_dir = config_pl.DATA_DIR,
         transforms={'train': train_transform, 'test': test_transform},
         batch_size=config_pl.BATCH_SIZE,
         num_workers=config_pl.NUM_WORKERS)

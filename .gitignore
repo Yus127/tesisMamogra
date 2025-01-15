@@ -1,3 +1,15 @@
+# Data
 .data/
-config_pl.py
 .DS_Store
+
+# Virtualenv
+config_pl.py
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Logs
+david_test/
