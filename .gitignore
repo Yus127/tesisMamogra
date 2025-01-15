@@ -1,12 +1,15 @@
-# Data stuff
+# Data
 .data/
 .DS_Store
 
-# Virtualenv stuff
+# Virtualenv
 config_pl.py
 
-# Python stuff
+# Python
 *.pyc
 *.pyo
 *.pyd
 __pycache__/
+
+# Logs
+david_test/

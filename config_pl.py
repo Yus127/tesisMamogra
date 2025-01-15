@@ -6,6 +6,7 @@ WEIGHT_DECAY = 0.01
 BATCH_SIZE = 16
 NUM_EPOCHS = 2
 DROPOUT_RATE = 0.2
+PRECISION = "bf16-mixed"
 
 # These are according to the tokenizer
 BOS_TOKEN_ID = 2

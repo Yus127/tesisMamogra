@@ -21,7 +21,9 @@ model, preprocess = create_model_from_pretrained('hf-hub:microsoft/BiomedCLIP-Pu
 class_descriptions = [
     "Characterized by scattered areas of pattern density",
     "Fatty predominance",
-    "Extremely dense"
+    "Extremely dense",
+    "Heterogeneously dense",
+    "Moderately dense"
     ]
 
 linear_probe = CLIPLinearProbe(
@@ -51,7 +53,8 @@ trainer = L.Trainer(
     accelerator=config_pl.ACCELERATOR,
     devices=config_pl.DEVICES,
     max_epochs=config_pl.NUM_EPOCHS,
-    callbacks=[early_stop_callback]
+    callbacks=[early_stop_callback],
+    precision=config_pl.PRECISION
 ) 
 
 train_transform = T.Compose([
