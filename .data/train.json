@@ -1,0 +1,58 @@
+[
+    {
+        "S0000114_2014_LCC.tif": {
+            "image_paths": ["100images/S0000114_2014_LCC.tif"],
+            "mask_paths": ["S0000114_2014_LCC.tif.nrrd"],
+            "report": "Characterized by scattered areas of pattern density"
+        }
+    },
+    {
+        "S0000114_2014_RCC.tif": {
+            "image_paths": ["100images/S0000114_2014_RCC.tif"],
+            "mask_paths": ["S0000114_2014_RCC.tif.nrrd"],
+            "report": "Characterized by scattered areas of pattern density"
+        }
+    },
+    {
+        "S0000078_2017_RMLO.tif": {
+            "image_paths": ["100images/S0000078_2017_RMLO.tif"],
+            "mask_paths": ["S0000078_2017_RMLO.tif.nrrd"],
+            "report": "Fatty predominance"
+        }
+    },
+    {
+        "S0000083_2014_RCC.tif": {
+            "image_paths": ["100images/S0000083_2014_RCC.tif"],
+            "mask_paths": ["S0000083_2014_RCC.tif.nrrd"],
+            "report": "Extremely dense"
+        }
+    },
+    {
+        "S0000078_2017_LCC.tif": {
+            "image_paths": ["100images/S0000078_2017_LCC.tif"],
+            "mask_paths": ["S0000078_2017_LCC.tif.nrrd"],
+            "report": "Fatty predominance"
+        }
+    },
+    {
+        "S0000009_2014_LCC.tif": {
+            "image_paths": ["100images/S0000009_2014_LCC.tif"],
+            "mask_paths": ["S0000009_2014_LCC.tif.nrrd"],
+            "report": "Moderately dense"
+        }
+    },
+    {
+        "S0000009_2014_RCC.tif": {
+            "image_paths": ["100images/S0000009_2014_RCC.tif"],
+            "mask_paths": ["S0000009_2014_RCC.tif.nrrd"],
+            "report": "Moderately dense"
+        }
+    },
+    {
+        "S0000078_2017_RCC.tif": {
+            "image_paths": ["100images/S0000078_2017_RCC.tif"],
+            "mask_paths": ["S0000078_2017_RCC.tif.nrrd"],
+            "report": "Fatty predominance"
+        }
+    }
+]

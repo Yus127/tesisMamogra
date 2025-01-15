@@ -1,0 +1,16 @@
+[
+    {
+        "S0000078_2017_LMLO.tif": {
+            "image_paths": ["100images/S0000078_2017_LMLO.tif"],
+            "mask_paths": ["S0000078_2017_LMLO.tif.nrrd"],
+            "report": "Fatty predominance"
+        }
+    },
+    {
+        "S0000114_2014_LMLO.tif": {
+            "image_paths": ["100images/S0000114_2014_LMLO.tif"],
+            "mask_paths": ["S0000114_2014_LMLO.tif.nrrd"],
+            "report": "Characterized by scattered areas of pattern density"
+        }
+    }
+]
