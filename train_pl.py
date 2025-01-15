@@ -1,4 +1,3 @@
-import os
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping

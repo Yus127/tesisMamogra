@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
-from torchmetrics.text import BLEUScore
 import lightning as L
-from transformers import get_linear_schedule_with_warmup
 
-"""
+#from torchmetrics.text import BLEUScore
+#from transformers import get_linear_schedule_with_warmup
+
+""" TODO: Clean this classes
 Text generation or image-captioning model using a pretrained CLIP model as a base 
 for extracting image features, and adding a custom captioning head for generating 
 text descriptions based on those features
-"""
 
 class CaptioningHead(nn.Module):
     def __init__(self, clip_hidden_size: int, vocab_size: int, hidden_size: int ):
@@ -257,9 +257,9 @@ class LightningBiomedCLIP(L.LightningModule):
 
     
     def generate(self, images, max_length=None, temperature=1.0, top_k=50):
-        """
-        Generate complete token sequences using top-k sampling
-        """
+        
+        # Generate complete token sequences using top-k sampling
+        
         if max_length is None:
             max_length = self.max_length
             
@@ -326,8 +326,10 @@ class LightningBiomedCLIP(L.LightningModule):
                 'interval': 'step'
             }
         }
-
 """
+
+
+""" TODO: Clean logging methods and calls
 Linear probe, I added a extra layer to clasiffy the images into N categories 
 """
 class CLIPLinearProbe(L.LightningModule):
