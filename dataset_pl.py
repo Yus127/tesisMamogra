@@ -26,13 +26,13 @@ class ComplexMedicalDataset(Dataset):
 
         if train:
             # Check there is a train.json file
-            if not os.path.exists(os.path.join(data_dir, "train.json")):
+            if not os.path.exists(os.path.join(self.data_dir, "train.json")):
                 raise FileNotFoundError("train.json file not found in the data directory.")
             with open(os.path.join(data_dir, "train.json"), 'r') as f:
                 self.data = json.load(f)
         else:
             # Check there is a test.json file
-            if not os.path.exists(os.path.join(data_dir, "test.json")):
+            if not os.path.exists(os.path.join(self.data_dir, "test.json")):
                 raise FileNotFoundError("test.json file not found in the data directory.")
             with open(os.path.join(data_dir, "test.json"), 'r') as f:
                 self.data = json.load(f)
@@ -47,6 +47,8 @@ class ComplexMedicalDataset(Dataset):
         # Load image
         image_path = item["filename"]
         image = cv2.imread(os.path.join(self.data_dir, image_path))
+        if image is None:
+            raise FileNotFoundError(f"Image not found at {os.path.join(self.data_dir, image_path)}")
 
         if self.transform:
             image = self.transform(image)
@@ -86,7 +88,7 @@ class MyDatamodule(L.LightningDataModule):
             print(e)
             print("Skipping training data.")
             self.train_dataset = None
-            self.val_dataset = None
+            self.validation_dataset = None
 
         # Load test data
         try:
@@ -159,7 +161,7 @@ def _test_MyDatamodule():
     ])
 
     myMedicalDataModule = MyDatamodule(
-        data_dir=config_pl.DATA_DIR+"400images/",
+        data_dir=config_pl.DATA_DIR,
         transforms={'train': train_transform, 'test': train_transform},
         batch_size=2,
         num_workers=1)

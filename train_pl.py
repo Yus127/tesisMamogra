@@ -42,7 +42,7 @@ early_stop_callback = EarlyStopping(
 
 logger = TensorBoardLogger(
     save_dir='david_test',
-    name='clip_probe',
+    name='linear_probe',
     default_hp_metric=False
 )
 
@@ -50,10 +50,7 @@ trainer = L.Trainer(
     logger=logger,
     accelerator=config_pl.ACCELERATOR,
     devices=config_pl.DEVICES,
-    min_epochs=1,
     max_epochs=config_pl.NUM_EPOCHS,
-    precision=config_pl.PRECISION,
-    log_every_n_steps = 3,
     callbacks=[early_stop_callback]
 ) 
 
@@ -71,7 +68,7 @@ test_transform = T.Compose([
     ])
 
 myMedicalDataModule = MyDatamodule(
-        data_dir = os.getenv("DATA_DIR"),
+        data_dir = config_pl.DATA_DIR,
         transforms={'train': train_transform, 'test': test_transform},
         batch_size=config_pl.BATCH_SIZE,
         num_workers=config_pl.NUM_WORKERS)

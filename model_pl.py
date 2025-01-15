@@ -402,10 +402,13 @@ class CLIPLinearProbe(L.LightningModule):
         image, text = batch['image'], batch['text']
         
         # Get label index
-        try:
-            label = self.class_text.index(text)
-        except ValueError:
-            raise ValueError(f"Class description '{text}' not found in target classes.")
+        label = torch.Tensor(len(text))
+        for idx, t in enumerate(text):
+            if t not in self.class_text:
+                raise ValueError(f"Class description '{t}' not found in target classes.")
+            label[idx] = torch.tensor(self.class_text.index(t))
+
+        print("Label tensor correct: ", label)
         
         # Compute logits
         logits = self(image)
@@ -486,10 +489,11 @@ class CLIPLinearProbe(L.LightningModule):
         image, text = batch['image'], batch['text']
         
         # Get label index
-        try:
-            label = self.class_text.index(text)
-        except ValueError:
-            raise ValueError(f"Class description '{text}' not found in target classes.")
+        label = torch.Tensor(len(text))
+        for idx, t in enumerate(text):
+            if t not in self.class_text:
+                raise ValueError(f"Class description '{t}' not found in target classes.")
+            label[idx] = torch.tensor(self.class_text.index(t))
         
         with torch.no_grad():
             logits = self(image)

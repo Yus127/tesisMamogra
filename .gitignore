@@ -1,3 +1,12 @@
+# Data stuff
 .data/
-config_pl.py
 .DS_Store
+
+# Virtualenv stuff
+config_pl.py
+
+# Python stuff
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
