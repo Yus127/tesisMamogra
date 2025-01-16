@@ -31,10 +31,11 @@ linear_probe = CLIPLinearProbe(
     learning_rate=config_pl.LEARNING_RATE, 
     weight_decay=config_pl.WEIGHT_DECAY, 
     dropout_rate=config_pl.DROPOUT_RATE,
+    l2_lambda=config_pl.L2_LAMBDA
     )
 
 early_stop_callback = EarlyStopping(
-        monitor='val_epoch_loss',  # quantity to monitor
+        monitor='val_loss',  # quantity to monitor
         min_delta=0.00,            # minimum change to qualify as an improvement
         patience=50,               # number of epochs with no improvement after which training will be stopped
         verbose=True,              # enable verbose mode
@@ -42,7 +43,7 @@ early_stop_callback = EarlyStopping(
     )
 
 logger = TensorBoardLogger(
-    save_dir='david_test',
+    save_dir='logging_tests',
     name='linear_probe',
     default_hp_metric=False
 )
@@ -53,7 +54,8 @@ trainer = L.Trainer(
     devices=config_pl.DEVICES,
     max_epochs=config_pl.NUM_EPOCHS,
     callbacks=[early_stop_callback],
-    precision=config_pl.PRECISION
+    precision=config_pl.PRECISION,
+    log_every_n_steps=25
 ) 
 
 train_transform = T.Compose([
@@ -76,3 +78,4 @@ myMedicalDataModule = MyDatamodule(
         num_workers=config_pl.NUM_WORKERS)
 
 trainer.fit(model=linear_probe, datamodule=myMedicalDataModule)
+trainer.test(model=linear_probe, datamodule=myMedicalDataModule)

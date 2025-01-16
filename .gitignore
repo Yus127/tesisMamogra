@@ -1,5 +1,5 @@
 # Data
-.data/
+.data/*
 .DS_Store
 
 # Virtualenv
@@ -13,3 +13,4 @@ __pycache__/
 
 # Logs
 david_test/
+logging_tests/
