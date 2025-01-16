@@ -329,26 +329,35 @@ class LightningBiomedCLIP(L.LightningModule):
 """
 
 
-""" TODO: Clean logging methods and calls
+"""
 Linear probe, I added a extra layer to clasiffy the images into N categories 
 """
 class CLIPLinearProbe(L.LightningModule):
-    def __init__(self, model, class_descriptions, learning_rate=0.0001, weight_decay=0.0, dropout_rate=0.2):
+    def __init__(
+        self, 
+        model, 
+        class_descriptions: list, 
+        learning_rate: float = 0.0001,
+        weight_decay: float = 0.0, 
+        dropout_rate: float = 0.2, 
+        l2_lambda: float = 0.00
+    ):
         super().__init__()
+        self.save_hyperparameters(ignore=['model'])
 
-        self.clip_model = model
-        # Freeze model parameters
-        for param in self.clip_model.parameters():
+        # Model initialization
+        self.model = model
+        for param in self.model.parameters():
             param.requires_grad = False
         
-        ''' TODO: Dejar el cálculo de la dimensión de embedding de imagen parametrizada como lo tenía Yus
-        with torch.no_grad():
-            dummy_image = torch.zeros(1, 3, 224, 224, device=self.device)
-            image_features = self.clip_model.encode_image(dummy_image)
-            self.feature_dim = image_features.shape[1]
-        '''
         # Get CLIP image embedding dimension
-        self.feature_dim = 512
+        self.feature_dim = ( # It is needed to know the model architecture
+            self.model
+            .get_submodule(target='visual')
+            .get_submodule(target='head')
+            .get_submodule(target='proj')
+            .out_features
+        )
 
         # Define an index for each class description
         self.class_text = class_descriptions
@@ -360,114 +369,54 @@ class CLIPLinearProbe(L.LightningModule):
         nn.init.zeros_(self.classifier.bias)
 
         # Hyperparameters
-        self.dropout_rate = dropout_rate
-        self.weight_decay = weight_decay
         self.learning_rate = learning_rate
-        
-
-        ''' Store similarities for later logging
-        # TODO: No entiendo la finalidad de esto, consultar con Yus
-        # self.similarities = self.class_text_features @ self.class_text_features.t()
-
-        # Print similarities for debugging
-        print("\nClass Description Similarities:")
-        for i in range(len(class_descriptions)):
-            most_similar = torch.topk(self.similarities[i], 3)
-            print(f"\nClass {i} most similar to:")
-            for sim, idx in zip(most_similar.values, most_similar.indices):
-                if idx != i:
-                    print(f"Class {idx}: {sim:.3f}")
-        '''
+        self.weight_decay = weight_decay
+        self.dropout_rate = dropout_rate
+        self.l2_lambda = l2_lambda
 
         # Metrics
-        self.accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes)
-        self.epoch_loss = 0      # To track loss per epoch
+        self.accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", 
+            num_classes=self.num_classes
+        )
+        self.epoch_loss = 0 
 
-    def on_fit_start(self):
-        ''' No lo entiendo, de momento lo dejo comentado TODO: Consultar con Yus
-        if self.logger is not None:
-            # Log similarity matrix
-            fig = plt.figure(figsize=(10, 10))
-            similarities_np = self.similarities.numpy(force=True)
-            sns.heatmap(similarities_np, annot=True, fmt='.2f')
-            plt.title('Class Description Similarities')
-            self.logger.experiment.add_figure('class_similarities', fig, 0)
-            plt.close(fig)
-
-            # Log model graph
-            dummy_input = torch.zeros(1, self.feature_dim, device=self.device)
-            self.logger.experiment.add_graph(self.classifier, dummy_input)
-        '''
-        pass
-
-    def training_step(self, batch, batch_idx):
+    def _common_step(self, batch, batch_idx):
+        # Get batch
         image, text = batch['image'], batch['text']
         
         # Get label index
-        labels = torch.Tensor(len(text)).type(torch.LongTensor).to(self.device)
+        labels = (torch.Tensor(len(text))
+                  .type(torch.LongTensor)
+                  .to(self.device)
+        )
         for idx, t in enumerate(text):
             if t not in self.class_text:
-                raise ValueError(f"Class description '{t}' not found in target classes.")
+                raise ValueError(
+                    f"Class description '{t}' not found in target classes."
+                )
             labels[idx] = torch.tensor(self.class_text.index(t))
+        
+        return image, labels
+
+    def training_step(self, batch, batch_idx):
+        image, labels = self._common_step(batch, batch_idx)
         
         # Compute logits
         logits = self(image)
 
         # Compute loss
-        #TODO: clean: loss = F.cross_entropy(logits, label, label_smoothing=0.1)
-        loss = F.cross_entropy(logits, labels)
-        
-        # L2 regularization
-        l2_lambda = 0.01
-        l2_norm = sum(torch.sum(param ** 2) for param in self.classifier.parameters())       
-        loss = loss + l2_lambda * l2_norm
+        loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
+        if self.l2_lambda > 0.0:
+            l2_norm = sum(
+                torch.sum(param ** 2) 
+                for param in self.classifier.parameters()
+            )
+            loss = loss + self.l2_lambda * l2_norm
         self.epoch_loss += loss.item()
         
         # Log training metrics
-        self.log('batch_loss', loss, prog_bar=True)
-        
-        ''' Periodically log visuals if logger exists
-        TODO: Consultar con Yus
-        if self.logger is not None and batch_idx % 10 == 0:
-            # Log images
-            x = images[:8]
-            grid = torchvision.utils.make_grid(x.view(-1,1,224,224))
-            self.logger.experiment.add_image("training_samples", grid, self.global_step)
-            
-            # Log predictions
-            predictions = logits.argmax(dim=-1)
-            
-            # Create prediction distribution plot
-            pred_hist = torch.zeros(self.num_classes)
-            for i in range(self.num_classes):
-                pred_hist[i] = (predictions == i).float().mean()
-            
-            fig = plt.figure(figsize=(10, 5))
-            plt.bar(range(self.num_classes), pred_hist.cpu().numpy())
-            plt.title('Prediction Distribution')
-            plt.xlabel('Class')
-            plt.ylabel('Frequency')
-            self.logger.experiment.add_figure('pred_distribution', fig, self.global_step)
-            plt.close(fig)
-            
-            # Log confusion matrix
-            confusion = torch.zeros(self.num_classes, self.num_classes)
-            for pred, label in zip(predictions, labels):
-                confusion[label][pred] += 1
-            
-            fig = plt.figure(figsize=(10, 10))
-            sns.heatmap(confusion.cpu().numpy(), annot=True, fmt='g')
-            plt.title('Confusion Matrix')
-            plt.xlabel('Predicted')
-            plt.ylabel('Actual')
-            self.logger.experiment.add_figure('confusion_matrix', fig, self.global_step)
-            plt.close(fig)
-            
-            print(f"\nTraining Batch {batch_idx}")
-            print(f"Loss: {loss.item():.4f}")
-            print("Predictions:", predictions.tolist())
-            print("Actual:", labels.tolist())
-        '''
+        self.log('train_batch_loss', loss, on_step=True)
         
         # Update metrics
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
@@ -475,58 +424,80 @@ class CLIPLinearProbe(L.LightningModule):
 
         return loss
 
-    def on_train_epoch_end(self):
-        """Log histograms at the end of each training epoch.
-        if self.logger is not None:
-            for name, param in self.classifier.named_parameters():
-                self.logger.experiment.add_histogram(f'classifier/{name}', param, self.current_epoch)
-                if param.grad is not None:
-                    self.logger.experiment.add_histogram(f'classifier/{name}_grad', param.grad, self.current_epoch)
-        TODO: Consultar con Yus""" 
+    def _epoch_metrics(self, epoch_loss):
+        # Compute epoch metrics
         acc = self.accuracy.compute()
-        train_epoch_loss = self.epoch_loss / self.trainer.num_training_batches
-        self.log('train_epoch_loss', train_epoch_loss, prog_bar=True) 
-        self.log('train_epoch_acc', acc, prog_bar=True)
-        # Reset loss for next epoch
+        loss = epoch_loss / self.trainer.num_training_batches
+
+        # Reset metrics
         self.epoch_loss = 0
 
+        return acc, loss
+
+    def on_train_epoch_end(self):
+        # Compute epoch metrics
+        acc, loss = self._epoch_metrics(self.epoch_loss)
+        
+        # Log metrics
+        self.log('train_loss', loss, on_epoch=True)
+        self.log('train_acc', acc, on_epoch=True)
+
     def validation_step(self, batch, batch_idx):
-        image, text = batch['image'], batch['text']
+        image, labels = self._common_step(batch, batch_idx)
         
-        # Get label index
-        labels = torch.Tensor(len(text)).type(torch.LongTensor).to(self.device)
-        for idx, t in enumerate(text):
-            if t not in self.class_text:
-                raise ValueError(f"Class description '{t}' not found in target classes.")
-            labels[idx] = torch.tensor(self.class_text.index(t))
-        
+        # Compute logits
         with torch.no_grad():
             logits = self(image)
 
         # Compute loss
-        # TODO: clean: loss = F.cross_entropy(logits, label, label_smoothing=0.1)
-        loss = F.cross_entropy(logits, labels)
+        loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
         self.epoch_loss += loss.item()
 
         # Log validation metrics
-        self.log('batch_val_loss', loss, prog_bar=True)
+        self.log('val_batch_loss', loss, on_step=True)
+
         # Update metrics
-        predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(predictions, labels)
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
 
         return loss
     
     def on_validation_epoch_end(self):
-        acc = self.accuracy.compute()
-        val_epoch_loss = self.epoch_loss / self.trainer.num_training_batches
-        self.log('val_epoch_loss', val_epoch_loss, prog_bar=True)
-        self.log('val_epoch_acc', acc, prog_bar=True)
-        # Reset loss for next epoch
-        self.epoch_loss = 0
+        # Compute epoch metrics
+        acc, loss = self._epoch_metrics(self.epoch_loss)
+
+        # Log metrics
+        self.log('val_loss', loss, on_epoch=True)
+        self.log('val_acc', acc, on_epoch=True)
+
+    def test_step(self, batch, batch_idx):
+        image, labels = self._common_step(batch, batch_idx)
+        
+        # Compute logits
+        with torch.no_grad():
+            logits = self(image)
+
+        # Compute loss
+        loss = F.cross_entropy(logits, labels)
+        self.epoch_loss += loss.item()
+
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+
+        return loss
+    
+    def on_test_epoch_end(self):
+        # Compute epoch metrics
+        acc, loss = self._epoch_metrics(self.epoch_loss)
+        
+        # Log metrics
+        self.log('test_epoch_loss', loss, on_epoch=True)
+        self.log('test_epoch_acc', acc, on_epoch=True)
 
     def forward(self, x):
         with torch.no_grad():
-            image_features = self.clip_model.encode_image(x)
+            image_features = self.model.encode_image(x)
         return self.classifier(image_features)
 
     def configure_optimizers(self):
@@ -546,6 +517,6 @@ class CLIPLinearProbe(L.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "monitor": "val_epoch_loss"
+                "monitor": "val_loss"
             }
         }
