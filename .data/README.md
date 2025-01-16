@@ -6,9 +6,10 @@ The train.json and test.json file are expected to have the following format:
 
 ```json
 [
-  {"filename": <file_name>,
-   "image_path": <path to image from .data/>,
-   "report": <Medical report.>
+  {
+    "filename": "Name of the file",
+    "image_path": "Path to file from .data/",
+    "report": "Medical report."
   }
 ]
 ```
