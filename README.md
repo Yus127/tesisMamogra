@@ -1,4 +1,4 @@
 # Clasificación de descripciones asociadas a mamografías mediante BioMedCLIP
 
-# Conjunto de datos
-El conjunto de datos debe almacenarse en un directorio .data/ en el repositorio, que contenga las imágenes en una carpeta y los jsons con la información del conjunto de datos en train.json y test.json. El conjunto de validación se genera a partir de train.json.
+# Estructura esperada en el conjunto de datos
+El conjunto de datos debe almacenarse en una subcarpeta del directorio .data/ que contenga las imágenes y los jsons con la información del conjunto de datos en train.json y test.json. Si el conjunto de datos cuenta con un fichero train.json genera el conjunto de entrenamiento y validación a partir de este fichero. Si el conjunto de datos cuenta con un fichero test.json, genera el conjunto de test a partir de este fichero.
