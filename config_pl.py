@@ -1,0 +1,19 @@
+# Training hyperparameters
+CLIP_HIDDEN_SIZE = 512
+LEARNING_RATE = 0.0001
+WEIGHT_DECAY = 0.01
+WARMUP_STEPS = 1000
+BATCH_SIZE = 2
+NUM_EPOCHS = 500
+LEARNING_RATE = 0.001
+MAX_LENGHT = 64
+
+DATA_DIR = "/"
+
+# Dataset
+NUM_WORKERS = 1
+
+# Compute related
+ACCELERATOR = "gpu"
+DEVICES = [0]
+PRECISION = '16-mixed'
