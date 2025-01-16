@@ -8,7 +8,7 @@ import torchvision.transforms as T
 from open_clip import create_model_from_pretrained # works on open-clip-torch>=2.23.0, timm>=0.9.8
 
 from model_pl import CLIPLinearProbe
-import config_pl
+import config
 from dataset_pl import MyDatamodule
 
 
@@ -28,10 +28,10 @@ class_descriptions = [
 linear_probe = CLIPLinearProbe(
     model=model, 
     class_descriptions=class_descriptions, 
-    learning_rate=config_pl.LEARNING_RATE, 
-    weight_decay=config_pl.WEIGHT_DECAY, 
-    dropout_rate=config_pl.DROPOUT_RATE,
-    l2_lambda=config_pl.L2_LAMBDA
+    learning_rate=config.LEARNING_RATE, 
+    weight_decay=config.WEIGHT_DECAY, 
+    dropout_rate=config.DROPOUT_RATE,
+    l2_lambda=config.L2_LAMBDA
     )
 
 early_stop_callback = EarlyStopping(
@@ -50,11 +50,11 @@ logger = TensorBoardLogger(
 
 trainer = L.Trainer(
     logger=logger,
-    accelerator=config_pl.ACCELERATOR,
-    devices=config_pl.DEVICES,
-    max_epochs=config_pl.NUM_EPOCHS,
+    accelerator=config.ACCELERATOR,
+    devices=config.DEVICES,
+    max_epochs=config.NUM_EPOCHS,
     callbacks=[early_stop_callback],
-    precision=config_pl.PRECISION,
+    precision=config.PRECISION,
     log_every_n_steps=25
 ) 
 
@@ -72,10 +72,10 @@ test_transform = T.Compose([
     ])
 
 myMedicalDataModule = MyDatamodule(
-        data_dir = config_pl.DATA_DIR,
+        data_dir = config.DATA_DIR,
         transforms={'train': train_transform, 'test': test_transform},
-        batch_size=config_pl.BATCH_SIZE,
-        num_workers=config_pl.NUM_WORKERS)
+        batch_size=config.BATCH_SIZE,
+        num_workers=config.NUM_WORKERS)
 
 trainer.fit(model=linear_probe, datamodule=myMedicalDataModule)
 trainer.test(model=linear_probe, datamodule=myMedicalDataModule)

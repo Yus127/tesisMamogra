@@ -6,7 +6,7 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 
-import config_pl
+import config
 import lightning as L
 
 """Expected JSON Structure
@@ -140,7 +140,7 @@ def _test_ComplexMedicalDataset():
         transforms.Resize((224, 224)),
     ])
 
-    myMedicalDataset = ComplexMedicalDataset(data_dir=config_pl.DATA_DIR+"400images/", transform=train_transform)
+    myMedicalDataset = ComplexMedicalDataset(data_dir=config.DATA_DIR+"400images/", transform=train_transform)
 
     first_item = myMedicalDataset.__getitem__(0)
 
@@ -161,7 +161,7 @@ def _test_MyDatamodule():
     ])
 
     myMedicalDataModule = MyDatamodule(
-        data_dir=config_pl.DATA_DIR,
+        data_dir=config.DATA_DIR,
         transforms={'train': train_transform, 'test': train_transform},
         batch_size=2,
         num_workers=1)
