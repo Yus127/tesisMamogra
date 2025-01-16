@@ -1,5 +1,6 @@
 # Data
 .data/*
+!.data/README.md
 .DS_Store
 
 # Virtualenv
