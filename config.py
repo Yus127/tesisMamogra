@@ -13,7 +13,9 @@ PAD_TOKEN_ID = 0
 HIDDEN_SIZE = 224
 
 DATASET = "400images"
-DATA_DIR = ".data/" + DATASET + "/"
+#DATA_DIR = ".data/" + DATASET + "/"
+DATA_DIR ="/mnt/Pandora/Datasets/MamografiasMex/4kimages/"
+
 NUM_WORKERS = 19
 
 # Compute related
