@@ -201,6 +201,19 @@ def create_model(num_classes=5):
     
     return model
 
+
+
+import torch
+import torch.nn as nn
+import lightning as L
+from torchvision.models import convnext_base, ConvNeXt_Base_Weights
+from tqdm import tqdm
+import torchvision.transforms as transforms
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
 class MedicalTrainer(L.LightningModule):
     def __init__(self, num_classes=5, learning_rate=1e-4):
         super().__init__()
@@ -213,8 +226,12 @@ class MedicalTrainer(L.LightningModule):
         self.val_acc = 0.0
         self.best_val_acc = 0.0
         
+        # For confusion matrix
+        self.all_preds = []
+        self.all_labels = []
+        
         # Label encoding
-        self.label_encoder = None  # Will be set from the datamodule
+        self.label_encoder = None
     
     def set_label_encoder(self, label_encoder):
         self.label_encoder = label_encoder
@@ -224,7 +241,7 @@ class MedicalTrainer(L.LightningModule):
     
     def training_step(self, batch, batch_idx):
         images = batch['image']
-        labels = torch.tensor(batch['text'], device=self.device)  # Convert list to tensor
+        labels = torch.tensor(batch['text'], device=self.device)
         
         outputs = self(images)
         loss = self.criterion(outputs, labels)
@@ -241,7 +258,7 @@ class MedicalTrainer(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         images = batch['image']
-        labels = torch.tensor(batch['text'], device=self.device)  # Convert list to tensor
+        labels = torch.tensor(batch['text'], device=self.device)
         
         outputs = self(images)
         loss = self.criterion(outputs, labels)
@@ -251,15 +268,56 @@ class MedicalTrainer(L.LightningModule):
         correct = predicted.eq(labels).sum().item()
         self.val_acc = 100. * correct / labels.size(0)
         
+        # Store predictions and labels for confusion matrix
+        self.all_preds.extend(predicted.cpu().numpy())
+        self.all_labels.extend(labels.cpu().numpy())
+        
         self.log('val_loss', loss)
         self.log('val_acc', self.val_acc)
         
-        # Save best model
         if self.val_acc > self.best_val_acc:
             self.best_val_acc = self.val_acc
             self.save_model()
         
         return loss
+    
+    def on_validation_epoch_end(self):
+        # Calculate and plot confusion matrix
+        if len(self.all_preds) > 0:
+            conf_matrix = confusion_matrix(self.all_labels, self.all_preds)
+            
+            # Get class names if label_encoder is available
+            if self.label_encoder is not None:
+                class_names = self.label_encoder.classes_
+            else:
+                class_names = [f'Class {i}' for i in range(len(conf_matrix))]
+            
+            # Plot confusion matrix
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
+                       xticklabels=class_names,
+                       yticklabels=class_names)
+            plt.title('Confusion Matrix')
+            plt.xlabel('Predicted')
+            plt.ylabel('True')
+            plt.tight_layout()
+            plt.savefig('confusion_matrix.png')
+            plt.close()
+            
+            # Calculate per-class accuracy
+            per_class_acc = conf_matrix.diagonal() / conf_matrix.sum(axis=1)
+            print("\nPer-class accuracy:")
+            for class_name, acc in zip(class_names, per_class_acc):
+                print(f"{class_name}: {acc*100:.2f}%")
+            
+            # Print classification report
+            print("\nClassification Report:")
+            print(classification_report(self.all_labels, self.all_preds,
+                                     target_names=class_names))
+            
+            # Reset storage
+            self.all_preds = []
+            self.all_labels = []
     
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
@@ -298,7 +356,7 @@ def main():
     
     # Create data module
     data_module = MyDatamodule(
-        data_dir='/mnt/Pandora/Datasets/MamografiasMex/4kimages/',  # data directory
+        data_dir='/mnt/Pandora/Datasets/MamografiasMex/4kimages/',  # data directory        
         transforms=transforms_dict,
         batch_size=batch_size,
         num_workers=4
@@ -306,6 +364,9 @@ def main():
     
     # Set up the data module
     data_module.setup()
+    
+    # Get label encoder from training dataset
+    label_encoder = data_module.train_dataset.dataset.get_label_encoder()
     
     # Initialize trainer and model
     trainer = L.Trainer(
@@ -315,9 +376,13 @@ def main():
     )
     
     model = MedicalTrainer(num_classes=4, learning_rate=learning_rate)
+    model.set_label_encoder(label_encoder)
     
     # Train the model
     trainer.fit(model, data_module)
+    
+    # After training, perform validation to get final confusion matrix
+    trainer.validate(model, data_module)
 
 if __name__ == '__main__':
     main()
