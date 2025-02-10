@@ -173,9 +173,10 @@ class CLIPLinearProbe(L.LightningModule):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer,
             mode='min',
-            factor=0.5,
-            patience=50,
-            verbose=True
+            factor=0.2,
+            patience=10,
+            verbose=True,
+            min_lr=1e-6
         )
         return {
             "optimizer": optimizer,
