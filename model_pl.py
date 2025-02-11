@@ -3,7 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics
 import lightning as L
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 """
 Linear probe, I added a extra layer to clasiffy the images into N categories 
@@ -13,10 +15,10 @@ class CLIPLinearProbe(L.LightningModule):
         self, 
         model, 
         class_descriptions: list, 
-        learning_rate: float = 0.0001,
-        weight_decay: float = 0.0, 
-        dropout_rate: float = 0.2, 
-        l2_lambda: float = 0.00
+        learning_rate: float,
+        weight_decay: float, 
+        dropout_rate: float, 
+        l2_lambda: float
     ):
         super().__init__()
         self.save_hyperparameters(ignore=['model'])
@@ -128,8 +130,71 @@ class CLIPLinearProbe(L.LightningModule):
         # Update metrics
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
         self.accuracy.update(_predictions, labels)
+        self.confusion_matrix.update(_predictions, labels)
+        self.per_class_accuracy.update(_predictions, labels)
+        self.f1_score.update(_predictions, labels)
 
         return loss
+
+    def _log_confusion_matrix(self, stage):
+        # Compute confusion matrix
+        conf_matrix = self.confusion_matrix.compute()
+        
+        # Convert class indices to class names for better interpretability
+        fig = plt.figure(figsize=(10, 8))
+        sns.heatmap(
+            conf_matrix.cpu().numpy(),
+            annot=True,
+            fmt='g',
+            xticklabels=self.class_text,
+            yticklabels=self.class_text
+        )
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title(f'{stage.capitalize()} Confusion Matrix')
+        
+        # Log the figure to tensorboard
+        self.logger.experiment.add_figure(
+            f'{stage}_confusion_matrix',
+            fig,
+            self.current_epoch
+        )
+        plt.close()
+        
+    def _log_per_class_metrics(self, stage):
+        # Compute per-class metrics
+        per_class_acc = self.per_class_accuracy.compute()
+        f1_scores = self.f1_score.compute()
+        
+        # Create a bar plot comparing accuracy and F1 score for each class
+        fig, ax = plt.subplots(figsize=(12, 6))
+        x = np.arange(len(self.class_text))
+        width = 0.35
+        
+        ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
+        ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
+        
+        ax.set_ylabel('Score')
+        ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
+        ax.set_xticks(x)
+        ax.set_xticklabels(self.class_text, rotation=45, ha='right')
+        ax.legend()
+        
+        # Adjust layout to prevent label cutoff
+        plt.tight_layout()
+        
+        # Log the figure to tensorboard
+        self.logger.experiment.add_figure(
+            f'{stage}_per_class_metrics',
+            fig,
+            self.current_epoch
+        )
+        plt.close()
+        
+        # Log individual metrics
+        for idx, class_name in enumerate(self.class_text):
+            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
+            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
 
     def on_train_epoch_end(self):        
         # Compute epoch metrics
@@ -140,6 +205,16 @@ class CLIPLinearProbe(L.LightningModule):
         
         # Log metrics
         self.log('train_acc', acc)
+        
+        # Log confusion matrix and per-class metrics
+        self._log_confusion_matrix('train')
+        self._log_per_class_metrics('train')
+        
+        # Reset metrics
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
 
     def validation_step(self, batch, batch_idx):
         self._evaluate(batch, stage='val')
@@ -147,17 +222,39 @@ class CLIPLinearProbe(L.LightningModule):
     def on_validation_epoch_end(self):
         # Compute epoch metrics
         acc = self.accuracy.compute()
+        
         # Log metrics
         self.log('val_acc', acc)
-
+        
+        # Log confusion matrix and per-class metrics
+        self._log_confusion_matrix('val')
+        self._log_per_class_metrics('val')
+        
+        # Reset metrics
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
+    
     def test_step(self, batch, batch_idx):
         self._evaluate(batch, stage='test')
     
     def on_test_epoch_end(self):
         # Compute epoch metrics
         acc = self.accuracy.compute()
+        
         # Log metrics
         self.log('test_acc', acc)
+        
+        # Log confusion matrix and per-class metrics
+        self._log_confusion_matrix('test')
+        self._log_per_class_metrics('test')
+        
+        # Reset metrics
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
 
     def forward(self, x):
         with torch.no_grad():
