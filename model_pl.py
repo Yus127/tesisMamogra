@@ -310,7 +310,7 @@ class CLIPLinearProbe(L.LightningModule):
             optimizer=optimizer,
             mode='min',
             factor=0.2,
-            patience=10,
+            patience=30,
             verbose=True,
             min_lr=1e-6
         )
