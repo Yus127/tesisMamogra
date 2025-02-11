@@ -74,6 +74,8 @@ class CLIPLinearProbe(L.LightningModule):
             average=None
         )
 
+        self.metrics_updated = False
+
     def _common_step(self, batch, batch_idx):
         # Get batch
         image, text = batch['image'], batch['text']
@@ -107,6 +109,7 @@ class CLIPLinearProbe(L.LightningModule):
         self.confusion_matrix.update(_predictions, labels)
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
+        self.metrics_updated = True
 
         # Log metrics
         self.log(
@@ -152,10 +155,13 @@ class CLIPLinearProbe(L.LightningModule):
         self.confusion_matrix.update(_predictions, labels)
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
+        self.metrics_updated = True
 
         return loss
 
     def _log_confusion_matrix(self, stage):
+        if not self.metrics_updated:
+            return
         # Compute confusion matrix
         conf_matrix = self.confusion_matrix.compute()
         
@@ -181,6 +187,9 @@ class CLIPLinearProbe(L.LightningModule):
         plt.close()
         
     def _log_per_class_metrics(self, stage):
+        if not self.metrics_updated:
+            return
+
         # Compute per-class metrics
         per_class_acc = self.per_class_accuracy.compute()
         f1_scores = self.f1_score.compute()
@@ -215,7 +224,10 @@ class CLIPLinearProbe(L.LightningModule):
             self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
             self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
 
-    def on_train_epoch_end(self):        
+    def on_train_epoch_end(self):
+        if not self.metrics_updated:
+            return
+
         # Compute epoch metrics
         acc = self.accuracy.compute()
 
@@ -234,11 +246,14 @@ class CLIPLinearProbe(L.LightningModule):
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
+        self.metrics_updated = False
 
     def validation_step(self, batch, batch_idx):
         self._evaluate(batch, stage='val')
     
     def on_validation_epoch_end(self):
+        if not self.metrics_updated:
+            return
         # Compute epoch metrics
         acc = self.accuracy.compute()
         
@@ -254,11 +269,15 @@ class CLIPLinearProbe(L.LightningModule):
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
+        self.metrics_updated = False
     
     def test_step(self, batch, batch_idx):
         self._evaluate(batch, stage='test')
     
     def on_test_epoch_end(self):
+        if not self.metrics_updated:
+            return
+
         # Compute epoch metrics
         acc = self.accuracy.compute()
         
@@ -274,6 +293,7 @@ class CLIPLinearProbe(L.LightningModule):
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
+        self.metrics_updated = False
 
     def forward(self, x):
         with torch.no_grad():
