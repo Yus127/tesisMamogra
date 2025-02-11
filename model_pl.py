@@ -57,6 +57,22 @@ class CLIPLinearProbe(L.LightningModule):
             task="multiclass", 
             num_classes=self.num_classes
         )
+        self.confusion_matrix = torchmetrics.classification.ConfusionMatrix(
+            task="multiclass",
+            num_classes=self.num_classes
+        )
+        # Per-class accuracy metrics
+        self.per_class_accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass",
+            num_classes=self.num_classes,
+            average=None
+        )
+        # F1 Score per class
+        self.f1_score = torchmetrics.classification.F1Score(
+            task="multiclass",
+            num_classes=self.num_classes,
+            average=None
+        )
 
     def _common_step(self, batch, batch_idx):
         # Get batch
@@ -88,6 +104,9 @@ class CLIPLinearProbe(L.LightningModule):
         # Update metrics
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
         self.accuracy.update(_predictions, labels)
+        self.confusion_matrix.update(_predictions, labels)
+        self.per_class_accuracy.update(_predictions, labels)
+        self.f1_score.update(_predictions, labels)
 
         # Log metrics
         self.log(
