@@ -133,22 +133,6 @@ class CLIPLinearProbe(L.LightningModule):
             )
             loss = loss + self.l2_lambda * l2_norm
         
-        # Log training metrics
-        self.log(
-            name='train_loss', 
-            value=loss,  
-            batch_size=image.size(0),
-            on_step=False,
-            on_epoch=True
-        )
-        self.log(
-            name='train_batch_loss',
-            value=loss,
-            batch_size=image.size(0),
-            on_step=True,
-            on_epoch=False
-        )
-        
         # Update metrics
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
         self.accuracy.update(_predictions, labels)
@@ -156,6 +140,27 @@ class CLIPLinearProbe(L.LightningModule):
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
         self.metrics_updated = True
+
+         # Log the accuracy for the current batch
+        batch_acc = ((_predictions == labels).float().mean())
+
+        # Log training metrics
+        self.log(
+            name='train_loss', 
+            value=loss,  
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True
+        )
+        self.log(
+            name='train_acc_step', 
+            value=batch_acc,
+            on_step=True,
+            on_epoch=False,
+            prog_bar=True,
+            sync_dist=True
+        )
 
         return loss
 
@@ -219,10 +224,18 @@ class CLIPLinearProbe(L.LightningModule):
         )
         plt.close()
         
-        # Log individual metrics
+        # Log individual metrics with sync_dist=True
         for idx, class_name in enumerate(self.class_text):
-            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
-            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
+            self.log(
+                f'{stage}_acc_{class_name}', 
+                per_class_acc[idx],
+                sync_dist=True
+            )
+            self.log(
+                f'{stage}_f1_{class_name}', 
+                f1_scores[idx],
+                sync_dist=True
+            )
 
     def on_train_epoch_end(self):
         if not self.metrics_updated:
@@ -231,15 +244,18 @@ class CLIPLinearProbe(L.LightningModule):
         # Compute epoch metrics
         acc = self.accuracy.compute()
 
-        # Reset epoch loss counter
-        self.train_epoch_loss = 0
-        
+         # Log metrics
+        self.log('train_acc_epoch', acc, sync_dist=True, prog_bar=True)
+
         # Log metrics
-        self.log('train_acc', acc)
+        #self.log('train_acc', acc)
         
         # Log confusion matrix and per-class metrics
         self._log_confusion_matrix('train')
         self._log_per_class_metrics('train')
+        
+        # Reset epoch loss counter
+        self.train_epoch_loss = 0
         
         # Reset metrics
         self.accuracy.reset()
@@ -254,11 +270,12 @@ class CLIPLinearProbe(L.LightningModule):
     def on_validation_epoch_end(self):
         if not self.metrics_updated:
             return
+            
         # Compute epoch metrics
         acc = self.accuracy.compute()
         
         # Log metrics
-        self.log('val_acc', acc)
+        self.log('val_acc', acc, sync_dist=True, prog_bar=True)
         
         # Log confusion matrix and per-class metrics
         self._log_confusion_matrix('val')
