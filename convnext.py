@@ -1,5 +1,3 @@
-# is the multiclass classifier
-import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -7,16 +5,19 @@ from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 import os
 import json
 from PIL import Image
-import numpy as np
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 import cv2
-
 import torch
-import torch.nn as nn
 import lightning as L
-from torchvision.models import convnext_base, ConvNeXt_Base_Weights
+import torchvision.transforms as transforms
+from lightning.pytorch.loggers import TensorBoardLogger
+import torch.nn as nn
 from tqdm import tqdm
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+import torch
+from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 import torchvision.transforms as transforms
 
 from sklearn.preprocessing import LabelEncoder
@@ -113,7 +114,7 @@ class MyDatamodule(L.LightningDataModule):
             
             # Calculate split sizes
             total_size = len(training_data)
-            train_size = int(0.8 * total_size)
+            train_size = int(0.85 * total_size)
             val_size = total_size - train_size
             print(f"\nSplitting data into {train_size} training and {val_size} validation samples")
             
@@ -185,13 +186,6 @@ class MyDatamodule(L.LightningDataModule):
             num_workers=self.num_workers
         )
 
-import torch
-import torch.nn as nn
-import lightning as L
-from torchvision.models import convnext_base, ConvNeXt_Base_Weights
-from tqdm import tqdm
-import torchvision.transforms as transforms
-
 def create_model(num_classes=5):
     # Load pretrained ConvNeXt
     model = convnext_base(weights=ConvNeXt_Base_Weights.IMAGENET1K_V1)
@@ -200,19 +194,6 @@ def create_model(num_classes=5):
     model.classifier[2] = nn.Linear(1024, num_classes)
     
     return model
-
-
-
-import torch
-import torch.nn as nn
-import lightning as L
-from torchvision.models import convnext_base, ConvNeXt_Base_Weights
-from tqdm import tqdm
-import torchvision.transforms as transforms
-from sklearn.metrics import confusion_matrix, classification_report
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
 
 class MedicalTrainer(L.LightningModule):
     def __init__(self, num_classes=5, learning_rate=1e-4):
@@ -232,6 +213,9 @@ class MedicalTrainer(L.LightningModule):
         
         # Label encoding
         self.label_encoder = None
+        
+        # Initialize tensorboard logger
+        self.tensorboard = None
     
     def set_label_encoder(self, label_encoder):
         self.label_encoder = label_encoder
@@ -251,8 +235,12 @@ class MedicalTrainer(L.LightningModule):
         correct = predicted.eq(labels).sum().item()
         self.train_acc = 100. * correct / labels.size(0)
         
-        self.log('train_loss', loss)
-        self.log('train_acc', self.train_acc)
+        # Log metrics to tensorboard
+        self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('train/accuracy', self.train_acc, on_step=True, on_epoch=True, prog_bar=True)
+        
+        # Log learning rate
+        self.log('train/learning_rate', self.optimizer.param_groups[0]['lr'], on_epoch=True)
         
         return loss
     
@@ -272,8 +260,9 @@ class MedicalTrainer(L.LightningModule):
         self.all_preds.extend(predicted.cpu().numpy())
         self.all_labels.extend(labels.cpu().numpy())
         
-        self.log('val_loss', loss)
-        self.log('val_acc', self.val_acc)
+        # Log metrics to tensorboard
+        self.log('val/loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('val/accuracy', self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
         
         if self.val_acc > self.best_val_acc:
             self.best_val_acc = self.val_acc
@@ -293,7 +282,7 @@ class MedicalTrainer(L.LightningModule):
                 class_names = [f'Class {i}' for i in range(len(conf_matrix))]
             
             # Plot confusion matrix
-            plt.figure(figsize=(10, 8))
+            fig = plt.figure(figsize=(10, 8))
             sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
                        xticklabels=class_names,
                        yticklabels=class_names)
@@ -301,26 +290,37 @@ class MedicalTrainer(L.LightningModule):
             plt.xlabel('Predicted')
             plt.ylabel('True')
             plt.tight_layout()
-            plt.savefig('confusion_matrix.png')
+            
+            # Log confusion matrix to tensorboard
+            self.logger.experiment.add_figure('val/confusion_matrix', fig, self.current_epoch)
             plt.close()
             
             # Calculate per-class accuracy
             per_class_acc = conf_matrix.diagonal() / conf_matrix.sum(axis=1)
-            print("\nPer-class accuracy:")
-            for class_name, acc in zip(class_names, per_class_acc):
-                print(f"{class_name}: {acc*100:.2f}%")
             
-            # Print classification report
-            print("\nClassification Report:")
-            print(classification_report(self.all_labels, self.all_preds,
-                                     target_names=class_names))
+            # Log per-class accuracy to tensorboard
+            for class_name, acc in zip(class_names, per_class_acc):
+                self.log(f'val/accuracy_{class_name}', acc * 100)
+            
+            # Get classification report
+            report = classification_report(self.all_labels, self.all_preds,
+                                        target_names=class_names,
+                                        output_dict=True)
+            
+            # Log precision, recall, and f1-score for each class
+            for class_name in class_names:
+                metrics = report[class_name]
+                self.log(f'val/precision_{class_name}', metrics['precision'] * 100)
+                self.log(f'val/recall_{class_name}', metrics['recall'] * 100)
+                self.log(f'val/f1_{class_name}', metrics['f1-score'] * 100)
             
             # Reset storage
             self.all_preds = []
             self.all_labels = []
     
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        return self.optimizer
     
     def save_model(self):
         torch.save({
@@ -333,24 +333,21 @@ def main():
     torch.manual_seed(42)
     
     # Hyperparameters
-    batch_size = 32
-    num_epochs = 20
-    learning_rate = 1e-4
+    batch_size = 64
+    num_epochs = 100
+    learning_rate = 0.0001
     
     # Define transforms
     transforms_dict = {
         'train': transforms.Compose([
             transforms.ToPILImage(),
             transforms.Resize((224, 224)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.ToTensor()
         ]),
         'test': transforms.Compose([
             transforms.ToPILImage(),
             transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.ToTensor()
         ])
     }
     
@@ -362,17 +359,29 @@ def main():
         num_workers=4
     )
     
+    
     # Set up the data module
     data_module.setup()
     
     # Get label encoder from training dataset
     label_encoder = data_module.train_dataset.dataset.get_label_encoder()
     
+    # Initialize tensorboard logger
+    tensorboard_logger = TensorBoardLogger(
+        save_dir='logging_tests',
+        name='linear_probe',
+        version = "convnext_no_augmentation",
+
+        default_hp_metric=False
+    )
+    
     # Initialize trainer and model
     trainer = L.Trainer(
         max_epochs=num_epochs,
         accelerator='auto',
-        devices=1
+        devices=1,
+        logger=tensorboard_logger,
+        log_every_n_steps=10
     )
     
     model = MedicalTrainer(num_classes=4, learning_rate=learning_rate)
