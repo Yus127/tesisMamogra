@@ -192,7 +192,7 @@ def create_model(num_classes=5):
     return model
 
 class MedicalTrainer(L.LightningModule):
-    def __init__(self, num_classes=5, learning_rate=1e-4):
+    def __init__(self, num_classes, learning_rate):
         super().__init__()
         self.save_hyperparameters()
         
@@ -468,9 +468,9 @@ def main():
     torch.manual_seed(42)
     
     # Hyperparameters
-    batch_size = 32
+    batch_size = 64
     num_epochs = 200
-    learning_rate = 1e-4
+    learning_rate = 1e-5
     
     # Define transforms
     transforms_dict = {
@@ -505,7 +505,7 @@ def main():
     tensorboard_logger = TensorBoardLogger(
         save_dir='logging_tests',
         name='linear_probe',
-        version = "convnext_4_unbalanced_no_augmentation",
+        version = "convnext_4_unbalanced_no_augmentation_v2",
         default_hp_metric=False
     )
 
