@@ -376,6 +376,44 @@ class MedicalTrainer(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         return self._evaluate(batch, stage='val')
+
+    def test_step(self, batch, batch_idx):
+        return self._evaluate(batch, stage='test')
+    
+    def on_test_epoch_end(self):
+        # Compute epoch metrics
+        acc = self.accuracy.compute()
+        
+        # Log metrics
+        self.log('test_acc', acc)
+        
+        # Log confusion matrix and per-class metrics
+        self._log_confusion_matrix('test')
+        self._log_per_class_metrics('test')
+        
+        # Print test results
+        print(f"\nTest Results:")
+        print(f"Overall Test Accuracy: {acc:.2f}%")
+        
+        # Get class names
+        class_names = (self.label_encoder.classes_ if self.label_encoder 
+                      else [f'Class {i}' for i in range(self.num_classes)])
+        
+        # Get per-class metrics
+        per_class_acc = self.per_class_accuracy.compute()
+        f1_scores = self.f1_score.compute()
+        
+        print("\nPer-class Test Metrics:")
+        print("Class\t\tAccuracy\tF1 Score")
+        print("-" * 40)
+        for idx, class_name in enumerate(class_names):
+            print(f"{class_name:<15} {per_class_acc[idx]*100:.2f}%\t{f1_scores[idx]*100:.2f}%")
+        
+        # Reset metrics
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
     
     def on_validation_epoch_end(self):
         # Compute epoch metrics
@@ -493,6 +531,10 @@ def main():
     model = MedicalTrainer(num_classes=4, learning_rate=learning_rate)
     model.set_label_encoder(label_encoder)
     trainer.fit(model, data_module)
+
+    # Perform testing
+    test_results = trainer.test(model, datamodule=data_module)
+    
     
     # Final validation
     trainer.validate(model, data_module)
