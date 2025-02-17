@@ -187,34 +187,28 @@ def create_model(num_classes=5):
     return model
 
 class MedicalTrainer(L.LightningModule):
-    def __init__(self, num_classes, learning_rate):
+    def __init__(self, num_classes=5, learning_rate=1e-4):
         super().__init__()
         self.save_hyperparameters()
         
         self.model = create_model(num_classes)
         self.criterion = nn.CrossEntropyLoss()
         self.learning_rate = learning_rate
+        self.num_classes = num_classes
         
-        # Initialize metrics using torchmetrics
-        self.accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass", 
-            num_classes=num_classes
-        )
-        self.confusion_matrix = torchmetrics.classification.ConfusionMatrix(
-            task="multiclass",
-            num_classes=num_classes
-        )
-        self.per_class_accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass",
-            num_classes=num_classes,
-            average=None
-        )
-        self.f1_score = torchmetrics.classification.F1Score(
-            task="multiclass",
-            num_classes=num_classes,
-            average=None
-        )
+        # Initialize metrics using torchmetrics for each stage
+        metrics = MetricCollection({
+            'accuracy': torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_classes),
+            'per_class_accuracy': torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_classes, average=None),
+            'f1_score': torchmetrics.classification.F1Score(task="multiclass", num_classes=num_classes, average=None),
+            'confusion_matrix': torchmetrics.classification.ConfusionMatrix(task="multiclass", num_classes=num_classes)
+        })
         
+        # Create metrics for each stage
+        self.train_metrics = metrics.clone(prefix='train/')
+        self.val_metrics = metrics.clone(prefix='val/')
+        self.test_metrics = metrics.clone(prefix='test/')
+
         # Label encoding
         self.label_encoder = None
     
@@ -252,6 +246,29 @@ class MedicalTrainer(L.LightningModule):
         )
         
         return loss
+        
+    def _get_metrics_by_stage(self, stage):
+        if stage == 'train':
+            return self.train_metrics
+        elif stage == 'val':
+            return self.val_metrics
+        else:  # test
+            return self.test_metrics
+
+    def _log_metrics(self, stage, batch_size=None):
+        metrics = self._get_metrics_by_stage(stage)
+        computed_metrics = metrics.compute()
+        
+        # Log the metrics that aren't None
+        if computed_metrics:
+            for name, value in computed_metrics.items():
+                if isinstance(value, torch.Tensor) and value.numel() == 1:
+                    self.log(f'{stage}_{name}', value, batch_size=batch_size)
+    
+    def _update_metrics(self, stage, preds, labels):
+        metrics = self._get_metrics_by_stage(stage)
+        metrics.update(preds, labels)
+    
     
     def training_step(self, batch, batch_idx):
         images, labels = self._common_step(batch, batch_idx)
@@ -259,121 +276,162 @@ class MedicalTrainer(L.LightningModule):
         outputs = self(images)
         loss = self.criterion(outputs, labels)
         
-        # Log metrics
-        self.log(
-            name='train_loss', 
-            value=loss,
-            batch_size=images.size(0),
-            on_step=False,
-            on_epoch=True
-        )
-        self.log(
-            name='train_batch_loss',
-            value=loss,
-            batch_size=images.size(0),
-            on_step=True,
-            on_epoch=False
-        )
+        # Get predictions
+        predictions = outputs.softmax(dim=-1).argmax(dim=-1)
         
         # Update metrics
-        predictions = outputs.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(predictions, labels)
-        self.confusion_matrix.update(predictions, labels)
-        self.per_class_accuracy.update(predictions, labels)
-        self.f1_score.update(predictions, labels)
+        self._update_metrics('train', predictions, labels)
+        
+        # Log loss
+        self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True)
         
         return loss
-    
-    def _log_confusion_matrix(self, stage):
-        # Compute confusion matrix
-        conf_matrix = self.confusion_matrix.compute()
-        
-        # Get class names if label_encoder is available
-        class_names = (self.label_encoder.classes_ if self.label_encoder 
-                      else [f'Class {i}' for i in range(len(conf_matrix))])
-        
-        # Create figure
-        fig = plt.figure(figsize=(10, 8))
-        sns.heatmap(
-            conf_matrix.cpu().numpy(),
-            annot=True,
-            fmt='g',
-            cmap='Blues',
-            xticklabels=class_names,
-            yticklabels=class_names
-        )
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        plt.title(f'{stage.capitalize()} Confusion Matrix')
-        
-        # Log the figure to tensorboard
-        self.logger.experiment.add_figure(
-            f'{stage}_confusion_matrix',
-            fig,
-            self.current_epoch
-        )
-        plt.close()
-    
-    def _log_per_class_metrics(self, stage):
-        # Compute per-class metrics
-        per_class_acc = self.per_class_accuracy.compute()
-        f1_scores = self.f1_score.compute()
+    def on_test_epoch_end(self):
+        # Compute and log metrics
+        metrics = self.test_metrics.compute()
         
         # Get class names
         class_names = (self.label_encoder.classes_ if self.label_encoder 
-                      else [f'Class {i}' for i in range(len(per_class_acc))])
+                      else [f'Class {i}' for i in range(self.num_classes)])
         
-        # Create a bar plot comparing accuracy and F1 score for each class
-        fig, ax = plt.subplots(figsize=(12, 6))
-        x = np.arange(len(class_names))
-        width = 0.35
+        # Print test results
+        print("\nTest Results:")
+        print(f"Overall Test Accuracy: {metrics['accuracy']*100:.2f}%")
         
-        ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
-        ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
+        # Print per-class metrics
+        print("\nPer-class Test Metrics:")
+        print("Class\t\tAccuracy\tF1 Score")
+        print("-" * 40)
         
-        ax.set_ylabel('Score')
-        ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
-        ax.set_xticks(x)
-        ax.set_xticklabels(class_names, rotation=45, ha='right')
-        ax.legend()
+        per_class_acc = metrics['per_class_accuracy']
+        f1_scores = metrics['f1_score']
         
-        plt.tight_layout()
-        
-        # Log the figure to tensorboard
-        self.logger.experiment.add_figure(
-            f'{stage}_per_class_metrics',
-            fig,
-            self.current_epoch
-        )
-        plt.close()
-        
-        # Log individual metrics
         for idx, class_name in enumerate(class_names):
-            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
-            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
+            print(f"{class_name:<15} {per_class_acc[idx]*100:.2f}%\t{f1_scores[idx]*100:.2f}%")
+        
+        # Log metrics and visualizations
+        self._log_metrics('test')
+        self._log_confusion_matrix('test')
+        self._log_per_class_metrics('test')
+        
+        # Reset metrics
+        self.test_metrics.reset()
+    
+     def _log_confusion_matrix(self, stage):
+        metrics = self._get_metrics_by_stage(stage)
+        conf_matrix = metrics.compute()['confusion_matrix']
+        
+        if conf_matrix is not None:
+            # Get class names
+            class_names = (self.label_encoder.classes_ if self.label_encoder 
+                          else [f'Class {i}' for i in range(self.num_classes)])
+            
+            # Create figure
+            fig = plt.figure(figsize=(10, 8))
+            sns.heatmap(
+                conf_matrix.cpu().numpy(),
+                annot=True,
+                fmt='g',
+                cmap='Blues',
+                xticklabels=class_names,
+                yticklabels=class_names
+            )
+            plt.xlabel('Predicted')
+            plt.ylabel('True')
+            plt.title(f'{stage.capitalize()} Confusion Matrix')
+            
+            # Log the figure to tensorboard
+            self.logger.experiment.add_figure(
+                f'{stage}/confusion_matrix',
+                fig,
+                self.current_epoch
+            )
+            plt.close()
+    
+    
+    def _log_per_class_metrics(self, stage):
+        metrics = self._get_metrics_by_stage(stage)
+        computed_metrics = metrics.compute()
+        
+        if computed_metrics:
+            per_class_acc = computed_metrics['per_class_accuracy']
+            f1_scores = computed_metrics['f1_score']
+            
+            # Get class names
+            class_names = (self.label_encoder.classes_ if self.label_encoder 
+                          else [f'Class {i}' for i in range(self.num_classes)])
+            
+            # Create bar plot
+            fig, ax = plt.subplots(figsize=(12, 6))
+            x = np.arange(len(class_names))
+            width = 0.35
+            
+            ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
+            ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
+            
+            ax.set_ylabel('Score')
+            ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
+            ax.set_xticks(x)
+            ax.set_xticklabels(class_names, rotation=45, ha='right')
+            ax.legend()
+            
+            plt.tight_layout()
+            
+            # Log figure
+            self.logger.experiment.add_figure(
+                f'{stage}/per_class_metrics',
+                fig,
+                self.current_epoch
+            )
+            plt.close()
+            
+            # Log individual metrics
+            for idx, class_name in enumerate(class_names):
+                self.log(f'{stage}/acc_{class_name}', per_class_acc[idx])
+                self.log(f'{stage}/f1_{class_name}', f1_scores[idx])
     
     def on_train_epoch_end(self):
-        # Compute epoch metrics
-        acc = self.accuracy.compute()
-        
-        # Log metrics
-        self.log('train_acc', acc)
-        
-        # Log confusion matrix and per-class metrics
+        # Log metrics at epoch end
+        self._log_metrics('train')
         self._log_confusion_matrix('train')
         self._log_per_class_metrics('train')
         
         # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
+        self.train_metrics.reset()
     
     def validation_step(self, batch, batch_idx):
-        return self._evaluate(batch, stage='val')
+        images, labels = self._common_step(batch, batch_idx)
+        
+        outputs = self(images)
+        loss = self.criterion(outputs, labels)
+        
+        # Get predictions
+        predictions = outputs.softmax(dim=-1).argmax(dim=-1)
+        
+        # Update metrics
+        self._update_metrics('val', predictions, labels)
+        
+        # Log loss
+        self.log('val/loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+        
+        return loss
 
     def test_step(self, batch, batch_idx):
-        return self._evaluate(batch, stage='test')
+        images, labels = self._common_step(batch, batch_idx)
+        
+        outputs = self(images)
+        loss = self.criterion(outputs, labels)
+        
+        # Get predictions
+        predictions = outputs.softmax(dim=-1).argmax(dim=-1)
+        
+        # Update metrics
+        self._update_metrics('test', predictions, labels)
+        
+        # Log loss
+        self.log('test/loss', loss, on_step=False, on_epoch=True)
+        
+        return loss
     
     def on_test_epoch_end(self):
         # Compute epoch metrics
@@ -411,26 +469,20 @@ class MedicalTrainer(L.LightningModule):
         self.f1_score.reset()
     
     def on_validation_epoch_end(self):
-        # Compute epoch metrics
-        acc = self.accuracy.compute()
-        
-        # Log metrics
-        self.log('val_acc', acc)
-        
-        # Log confusion matrix and per-class metrics
+        # Log metrics at epoch end
+        self._log_metrics('val')
         self._log_confusion_matrix('val')
         self._log_per_class_metrics('val')
         
         # Save model if validation accuracy improved
-        if acc > getattr(self, 'best_val_acc', 0.0):
-            self.best_val_acc = acc
+        metrics = self.val_metrics.compute()
+        current_acc = metrics['accuracy']
+        if current_acc > getattr(self, 'best_val_acc', torch.tensor(0.0)):
+            self.best_val_acc = current_acc
             self.save_model()
         
         # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
+        self.val_metrics.reset()
     
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
