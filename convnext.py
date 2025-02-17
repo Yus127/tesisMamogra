@@ -71,7 +71,7 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir: str, transforms: dict, batch_size: int = 32, num_workers: int = 1):
+    def __init__(self, data_dir: str, transforms: dict, batch_size: int, num_workers: int):
         super(MyDatamodule, self).__init__()
         self.data_dir = data_dir
         self.transforms = transforms
@@ -93,11 +93,6 @@ class MyDatamodule(L.LightningDataModule):
         # Check if data directory exists
         if not os.path.exists(self.data_dir):
             raise FileNotFoundError(f"Data directory not found: {self.data_dir}")
-        
-        # List contents of data directory
-        #print("\nContents of data directory:")
-        #for item in os.listdir(self.data_dir):
-        #    print(f"- {item}")
         
         try:
             print("\nAttempting to load training data...")
