@@ -575,7 +575,7 @@ def setup_training(data_dir: str, batch_size: int = 32, learning_rate: float = 0
                 mode='min'
             )
         ],
-        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_unbalanced_no_augmentation_vgg",default_hp_metric=False)
+        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_unbalanced_no_augmentation_vgg",default_hp_metric=False))
     
     return trainer, model, datamodule
 
