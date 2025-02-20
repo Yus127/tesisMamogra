@@ -181,9 +181,6 @@ class VGG16Custom(LightningModule):
         self, 
         class_descriptions: list, 
         learning_rate: float = 0.0001,
-        weight_decay: float = 0.0, 
-        dropout_rate: float = 0.2, 
-        l2_lambda: float = 0.00,
         pretrained: bool = True
     ):
         super().__init__()
@@ -193,7 +190,6 @@ class VGG16Custom(LightningModule):
         self.class_text = class_descriptions
         self.label_encoder = LabelEncoder()
         self.label_encoder.fit(class_descriptions)
-        
 
         # Model initialization
         self.model = models.vgg16(pretrained=pretrained)
@@ -211,9 +207,8 @@ class VGG16Custom(LightningModule):
         # Define an index for each class description
         self.num_classes = len(self.class_text)
 
-        # Classifier initialization
+        # Simplified classifier without dropout
         self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout_rate),
             nn.Linear(self.feature_dim, self.num_classes)
         )
         # Initialize the new layer
@@ -222,9 +217,6 @@ class VGG16Custom(LightningModule):
 
         # Hyperparameters
         self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
-        self.dropout_rate = dropout_rate
-        self.l2_lambda = l2_lambda
 
         # Normalization for pretrained VGG16
         self.normalize = transforms.Normalize(
@@ -255,6 +247,10 @@ class VGG16Custom(LightningModule):
         # Initialize metric states tracker
         self.metrics_updated = False
 
+    def forward(self, x):
+        features = self.model(x)
+        return self.classifier(features)
+
     def _common_step(self, batch, batch_idx):
         # Get batch
         image, text = batch['image'], batch['text']
@@ -276,45 +272,14 @@ class VGG16Custom(LightningModule):
         
         return image, labels
 
-
-    def _evaluate(self, batch, stage=None):
-        image, labels = self._common_step(batch, None)
-        
-        # Compute logits
-        logits = self(image)
-        
-        # Compute loss
-        loss = F.cross_entropy(logits, labels)
-        
-        # Update metrics
-        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
-        self.confusion_matrix.update(_predictions, labels)
-        self.per_class_accuracy.update(_predictions, labels)
-        self.f1_score.update(_predictions, labels)
-        self.metrics_updated = True
-
-        # Log metrics
-        self.log(
-            name=f'{stage}_loss',
-            value=loss,
-            batch_size=image.size(0)
-        )
-
     def training_step(self, batch, batch_idx):
         image, labels = self._common_step(batch, batch_idx)
         
         # Compute logits
         logits = self(image)
 
-        # Compute loss
-        loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
-        if self.l2_lambda > 0.0:
-            l2_norm = sum(
-                torch.sum(param ** 2) 
-                for param in self.classifier.parameters()
-            )
-            loss = loss + self.l2_lambda * l2_norm
+        # Compute loss (removed label smoothing and L2 regularization)
+        loss = F.cross_entropy(logits, labels)
         
         # Log training metrics
         self.log(
@@ -342,135 +307,51 @@ class VGG16Custom(LightningModule):
 
         return loss
 
-    def _log_confusion_matrix(self, stage):
-        if not self.metrics_updated:
-            return
-            
-        conf_matrix = self.confusion_matrix.compute()
-        
-        fig = plt.figure(figsize=(10, 8))
-        sns.heatmap(
-            conf_matrix.cpu().numpy(),
-            annot=True,
-            fmt='g',
-            xticklabels=self.class_text,
-            yticklabels=self.class_text
-        )
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        plt.title(f'{stage.capitalize()} Confusion Matrix')
-        
-        self.logger.experiment.add_figure(
-            f'{stage}_confusion_matrix',
-            fig,
-            self.current_epoch
-        )
-        plt.close()
-
-    def _log_per_class_metrics(self, stage):
-        if not self.metrics_updated:
-            return
-            
-        per_class_acc = self.per_class_accuracy.compute()
-        f1_scores = self.f1_score.compute()
-        
-        fig, ax = plt.subplots(figsize=(12, 6))
-        x = np.arange(len(self.class_text))
-        width = 0.35
-        
-        ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
-        ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
-        
-        ax.set_ylabel('Score')
-        ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
-        ax.set_xticks(x)
-        ax.set_xticklabels(self.class_text, rotation=45, ha='right')
-        ax.legend()
-        
-        plt.tight_layout()
-        
-        self.logger.experiment.add_figure(
-            f'{stage}_per_class_metrics',
-            fig,
-            self.current_epoch
-        )
-        plt.close()
-        
-        # Log individual metrics
-        for idx, class_name in enumerate(self.class_text):
-            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
-            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
-
-    def on_train_epoch_end(self):        
-        if not self.metrics_updated:
-            return
-            
-        acc = self.accuracy.compute()
-        
-        self.log('train_acc', acc)
-        
-        self._log_confusion_matrix('train')
-        self._log_per_class_metrics('train')
-        
-        # Reset epoch loss counter
-        self.train_epoch_loss = 0
-        
-        # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
-        self.metrics_updated = False
-
     def validation_step(self, batch, batch_idx):
-        self._evaluate(batch, stage='val')
-    
+        image, labels = self._common_step(batch, batch_idx)
+        
+        # Compute logits
+        logits = self(image)
+        
+        # Compute loss
+        loss = F.cross_entropy(logits, labels)
+        
+        # Log validation metrics
+        self.log(
+            name='val_loss',
+            value=loss,
+            batch_size=image.size(0),
+            on_step=False,
+            on_epoch=True
+        )
+        
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+        self.confusion_matrix.update(_predictions, labels)
+        self.per_class_accuracy.update(_predictions, labels)
+        self.f1_score.update(_predictions, labels)
+        self.metrics_updated = True
+
+        return loss
+
     def on_validation_epoch_end(self):
         if not self.metrics_updated:
             return
             
         acc = self.accuracy.compute()
-        
         self.log('val_acc', acc)
         
-        self._log_confusion_matrix('val')
-        self._log_per_class_metrics('val')
-        
         self.accuracy.reset()
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
         self.metrics_updated = False
-
-    def test_step(self, batch, batch_idx):
-        self._evaluate(batch, stage='test')
-    
-    def on_test_epoch_end(self):
-        if not self.metrics_updated:
-            return
-            
-        acc = self.accuracy.compute()
-        
-        self.log('test_acc', acc)
-        
-        self._log_confusion_matrix('test')
-        self._log_per_class_metrics('test')
-        
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
-        self.metrics_updated = False
-
-    def forward(self, x):
-        features = self.model(x)
-        return self.classifier(features)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(
+        optimizer = torch.optim.Adam(
             params=self.classifier.parameters(),
-            lr=self.learning_rate,
-            weight_decay=self.weight_decay
+            lr=self.learning_rate
         )
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer,
@@ -486,7 +367,7 @@ class VGG16Custom(LightningModule):
                 "monitor": "val_loss"
             }
         }
-
+  
 def get_transforms():
     return {
         'train': transforms.Compose([
@@ -546,7 +427,7 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
                 mode='min'
             )
         ],
-        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm",default_hp_metric=False))
+        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm_v2",default_hp_metric=False))
     
     return trainer, model, datamodule
 
