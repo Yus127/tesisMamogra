@@ -30,7 +30,7 @@ class ComplexMedicalDataset(Dataset):
         self.label_encoder = LabelEncoder()
         
         # Load JSON file
-        json_file = "train.json" if train else "test.json"
+        json_file = "train_balanced.json" if train else "test_balanced.json"
         if not os.path.exists(os.path.join(self.data_dir, json_file)):
             raise FileNotFoundError(f"{json_file} not found in the data directory.")
             
@@ -237,7 +237,15 @@ class VGG16Custom(LightningModule):
                 nn.init.zeros_(m.bias)
 
         # Metrics
-        self.accuracy = torchmetrics.classification.Accuracy(
+        self.train_accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", 
+            num_classes=self.num_classes
+        )
+        self.val_accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", 
+            num_classes=self.num_classes
+        )
+        self.test_accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", 
             num_classes=self.num_classes
         )
@@ -310,41 +318,75 @@ class VGG16Custom(LightningModule):
         plt.close()
 
     def _log_per_class_metrics(self, stage):
-        if not self.metrics_updated:
-            return
-            
+        # Compute metrics
         per_class_acc = self.per_class_accuracy.compute()
         f1_scores = self.f1_score.compute()
         
         # Get class labels from mapping
         labels = [self.class_mapping[i] for i in range(self.num_classes)]
         
-        fig, ax = plt.subplots(figsize=(12, 6))
+        # Log metrics to tensorboard as scalars for each class
+        for idx, class_name in enumerate(labels):
+            acc_value = per_class_acc[idx].item()
+            f1_value = f1_scores[idx].item()
+            
+            self.log(f'{stage}/acc_class_{class_name}', acc_value, on_epoch=True)
+            self.log(f'{stage}/f1_class_{class_name}', f1_value, on_epoch=True)
+        
+        # Calculate mean metrics
+        mean_acc = torch.mean(per_class_acc).item()
+        mean_f1 = torch.mean(f1_scores).item()
+        
+        self.log(f'{stage}/mean_per_class_acc', mean_acc, on_epoch=True)
+        self.log(f'{stage}/mean_f1_score', mean_f1, on_epoch=True)
+        
+        # Create visualization
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
         x = np.arange(len(labels))
-        width = 0.35
         
-        ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
-        ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
+        # Plot accuracies
+        bars1 = ax1.bar(x, per_class_acc.cpu().numpy(), color='skyblue')
+        ax1.axhline(y=mean_acc, color='red', linestyle='--', label=f'Mean: {mean_acc:.3f}')
+        ax1.set_ylabel('Accuracy')
+        ax1.set_title(f'{stage.capitalize()} Per-Class Accuracy')
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(labels, rotation=45, ha='right')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
         
-        ax.set_ylabel('Score')
-        ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=45, ha='right')
-        ax.legend()
+        # Add value labels on bars
+        for bar in bars1:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.3f}',
+                    ha='center', va='bottom')
+        
+        # Plot F1 scores
+        bars2 = ax2.bar(x, f1_scores.cpu().numpy(), color='lightgreen')
+        ax2.axhline(y=mean_f1, color='red', linestyle='--', label=f'Mean: {mean_f1:.3f}')
+        ax2.set_ylabel('F1 Score')
+        ax2.set_title(f'{stage.capitalize()} Per-Class F1 Scores')
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(labels, rotation=45, ha='right')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.3f}',
+                    ha='center', va='bottom')
         
         plt.tight_layout()
         
+        # Log figure to tensorboard
         self.logger.experiment.add_figure(
-            f'{stage}_per_class_metrics',
+            f'{stage}/per_class_metrics',
             fig,
             self.current_epoch
         )
         plt.close()
-        
-        # Log individual metrics
-        for idx, class_name in enumerate(labels):
-            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
-            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
 
     def training_step(self, batch, batch_idx):
         image, labels = self._common_step(batch, batch_idx)
@@ -356,13 +398,8 @@ class VGG16Custom(LightningModule):
         loss = F.cross_entropy(logits, labels)
         
         # Log training metrics
-        self.log(
-            name='train_loss', 
-            value=loss,  
-            batch_size=image.size(0),
-            on_step=False,
-            on_epoch=True
-        )
+        self.log('train_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+
         self.log(
             name='train_batch_loss',
             value=loss,
@@ -372,8 +409,10 @@ class VGG16Custom(LightningModule):
         )
         
         # Update metrics
-        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
+        #_predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        _predictions = logits.argmax(dim=1)
+
+        self.train_accuracy.update(_predictions, labels)
         self.confusion_matrix.update(_predictions, labels)
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
@@ -391,17 +430,14 @@ class VGG16Custom(LightningModule):
         loss = F.cross_entropy(logits, labels)
         
         # Log validation metrics
-        self.log(
-            name='val_loss',
-            value=loss,
-            batch_size=image.size(0),
-            on_step=False,
-            on_epoch=True
-        )
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
+
         
         # Update metrics
-        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
+        #_predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        _predictions = logits.argmax(dim=-1)
+
+        self.val_accuracy.update(_predictions, labels)
         self.confusion_matrix.update(_predictions, labels)
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
@@ -428,8 +464,10 @@ class VGG16Custom(LightningModule):
         )
         
         # Update metrics
-        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
+        #_predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        _predictions = logits.argmax(dim=-1)
+
+        self.test_accuracy.update(_predictions, labels)
         self.confusion_matrix.update(_predictions, labels)
         self.per_class_accuracy.update(_predictions, labels)
         self.f1_score.update(_predictions, labels)
@@ -441,8 +479,10 @@ class VGG16Custom(LightningModule):
         if not self.metrics_updated:
             return
             
-        acc = self.accuracy.compute()
-        self.log('train_acc', acc)
+        train_acc = self.train_accuracy.compute()
+        self.log('train_acc', train_acc, on_epoch=True, prog_bar=True)
+        self.train_accuracy.reset()
+
         
         self._log_confusion_matrix('train')
         self._log_per_class_metrics('train')
@@ -457,13 +497,15 @@ class VGG16Custom(LightningModule):
         if not self.metrics_updated:
             return
             
-        acc = self.accuracy.compute()
-        self.log('val_acc', acc)
+        val_acc = self.val_accuracy.compute()
+        self.log('val_acc', val_acc, on_epoch=True, prog_bar=True)
         
         self._log_confusion_matrix('val')
         self._log_per_class_metrics('val')
         
-        self.accuracy.reset()
+        self.val_accuracy.reset()
+        self.train_accuracy.reset()
+        
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
@@ -473,13 +515,14 @@ class VGG16Custom(LightningModule):
         if not self.metrics_updated:
             return
             
-        acc = self.accuracy.compute()
-        self.log('test_acc', acc)
+        test_acc = self.test_accuracy.compute()
+        self.log('test_acc', test_acc, on_epoch=True, prog_bar=True)
+        
         
         self._log_confusion_matrix('test')
         self._log_per_class_metrics('test')
         
-        self.accuracy.reset()
+        self.test_accuracy.reset()
         self.confusion_matrix.reset()
         self.per_class_accuracy.reset()
         self.f1_score.reset()
@@ -580,7 +623,7 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
                 mode='min'
             )
         ],
-        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm_v3",default_hp_metric=False))
+        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm_v5",default_hp_metric=False))
     
     return trainer, model, datamodule
 
@@ -622,4 +665,3 @@ if __name__ == "__main__":
     
  #######
             
- 
