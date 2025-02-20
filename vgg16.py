@@ -499,7 +499,6 @@ def get_transforms():
         ])
     }
 
-# Assuming ComplexMedicalDataset is defined elsewhere, here's how to set everything up:
 def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     # Initialize transforms
     transforms_dict = get_transforms()
