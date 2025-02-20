@@ -93,7 +93,7 @@ class MyDatamodule(L.LightningDataModule):
         # Check if data directory exists
         if not os.path.exists(self.data_dir):
             raise FileNotFoundError(f"Data directory not found: {self.data_dir}")
-
+            
         try:
             print("\nAttempting to load training data...")
             training_data = ComplexMedicalDataset(
@@ -183,6 +183,7 @@ def create_model(num_classes=5):
 
     # Modify the classifier
     model.classifier[2] = nn.Linear(1024, num_classes)
+
     return model
 
 class MedicalTrainer(L.LightningModule):
@@ -193,7 +194,7 @@ class MedicalTrainer(L.LightningModule):
         self.model = create_model(num_classes)
         self.criterion = nn.CrossEntropyLoss()
         self.learning_rate = learning_rate
-        
+
         # Initialize metrics using torchmetrics
         self.accuracy = torchmetrics.classification.Accuracy(
             task="multiclass", 
@@ -213,37 +214,44 @@ class MedicalTrainer(L.LightningModule):
             num_classes=num_classes,
             average=None
         )
-        
+
         # Label encoding
         self.label_encoder = None
 
-@@ -252,128 +246,192 @@
+    def set_label_encoder(self, label_encoder):
+        self.label_encoder = label_encoder
+
+    def forward(self, x):
+        return self.model(x)
+
+    def _common_step(self, batch, batch_idx):
+        images = batch['image']
+        labels = torch.tensor(batch['text'], device=self.device)
+        return images, labels
+
+    def _evaluate(self, batch, stage=None):
+        images, labels = self._common_step(batch, None)
+
+        outputs = self(images)
+        loss = self.criterion(outputs, labels)
+
+        # Update metrics
+        predictions = outputs.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(predictions, labels)
+        self.confusion_matrix.update(predictions, labels)
+        self.per_class_accuracy.update(predictions, labels)
+        self.f1_score.update(predictions, labels)
+
+        # Log loss
+        self.log(
+            name=f'{stage}_loss',
+            value=loss,
+            batch_size=images.size(0),
+            on_step=False,
+            on_epoch=True
         )
 
         return loss
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def training_step(self, batch, batch_idx):
         images, labels = self._common_step(batch, batch_idx)
@@ -275,7 +283,7 @@ class MedicalTrainer(L.LightningModule):
         self.f1_score.update(predictions, labels)
 
         return loss
-    
+
     def _log_confusion_matrix(self, stage):
         # Compute confusion matrix
         conf_matrix = self.confusion_matrix.compute()
@@ -283,7 +291,7 @@ class MedicalTrainer(L.LightningModule):
         # Get class names if label_encoder is available
         class_names = (self.label_encoder.classes_ if self.label_encoder 
                       else [f'Class {i}' for i in range(len(conf_matrix))])
-        
+
         # Create figure
         fig = plt.figure(figsize=(10, 8))
         sns.heatmap(
@@ -297,7 +305,7 @@ class MedicalTrainer(L.LightningModule):
         plt.xlabel('Predicted')
         plt.ylabel('True')
         plt.title(f'{stage.capitalize()} Confusion Matrix')
-        
+
         # Log the figure to tensorboard
         self.logger.experiment.add_figure(
             f'{stage}_confusion_matrix',
@@ -305,7 +313,7 @@ class MedicalTrainer(L.LightningModule):
             self.current_epoch
         )
         plt.close()
-    
+
     def _log_per_class_metrics(self, stage):
         # Compute per-class metrics
         per_class_acc = self.per_class_accuracy.compute()
@@ -323,8 +331,6 @@ class MedicalTrainer(L.LightningModule):
         ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
         ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
 
-
-
         ax.set_ylabel('Score')
         ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
         ax.set_xticks(x)
@@ -332,7 +338,6 @@ class MedicalTrainer(L.LightningModule):
         ax.legend()
 
         plt.tight_layout()
-
 
         # Log the figure to tensorboard
         self.logger.experiment.add_figure(
@@ -354,75 +359,7 @@ class MedicalTrainer(L.LightningModule):
         # Log metrics
         self.log('train_acc', acc)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         # Log confusion matrix and per-class metrics
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         self._log_confusion_matrix('train')
         self._log_per_class_metrics('train')
 
@@ -435,49 +372,51 @@ class MedicalTrainer(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         return self._evaluate(batch, stage='val')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def test_step(self, batch, batch_idx):
         return self._evaluate(batch, stage='test')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def on_test_epoch_end(self):
         # Compute epoch metrics
-@@ -411,131 +469,125 @@
+        acc = self.accuracy.compute()
+
+        # Log metrics
+        self.log('test_acc', acc)
+
+        # Log confusion matrix and per-class metrics
+        self._log_confusion_matrix('test')
+        self._log_per_class_metrics('test')
+
+        # Print test results
+        print(f"\nTest Results:")
+        print(f"Overall Test Accuracy: {acc:.2f}%")
+
+        # Get class names
+        class_names = (self.label_encoder.classes_ if self.label_encoder 
+                      else [f'Class {i}' for i in range(self.num_classes)])
+
+        # Get per-class metrics
+        per_class_acc = self.per_class_accuracy.compute()
+        f1_scores = self.f1_score.compute()
+
+        print("\nPer-class Test Metrics:")
+        print("Class\t\tAccuracy\tF1 Score")
+        print("-" * 40)
+        for idx, class_name in enumerate(class_names):
+            print(f"{class_name:<15} {per_class_acc[idx]*100:.2f}%\t{f1_scores[idx]*100:.2f}%")
+
+        # Reset metrics
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
         self.f1_score.reset()
 
     def on_validation_epoch_end(self):
         # Compute epoch metrics
         acc = self.accuracy.compute()
-        
+
         # Log metrics
         self.log('val_acc', acc)
-        
+
         # Log confusion matrix and per-class metrics
         self._log_confusion_matrix('val')
         self._log_per_class_metrics('val')
@@ -485,8 +424,6 @@ class MedicalTrainer(L.LightningModule):
         # Save model if validation accuracy improved
         if acc > getattr(self, 'best_val_acc', 0.0):
             self.best_val_acc = acc
-
-
             self.save_model()
 
         # Reset metrics
@@ -599,3 +536,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
