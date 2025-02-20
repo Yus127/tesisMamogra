@@ -30,7 +30,7 @@ class ComplexMedicalDataset(Dataset):
         self.label_encoder = LabelEncoder()
         
         # Load JSON file
-        json_file = "train_balanced.json" if train else "test_balanced.json"
+        json_file = "train.json" if train else "test.json"
         if not os.path.exists(os.path.join(self.data_dir, json_file)):
             raise FileNotFoundError(f"{json_file} not found in the data directory.")
             
@@ -40,8 +40,14 @@ class ComplexMedicalDataset(Dataset):
         # Extract all unique labels and fit the encoder
         all_labels = [item['report'] for item in self.data]
         self.label_encoder.fit(all_labels)
+
+        # Convert all text labels to numerical labels at initialization
+        self.encoded_labels = self.label_encoder.transform(all_labels)
         
-        print(f"Found {len(self.label_encoder.classes_)} unique classes: {self.label_encoder.classes_}")
+        print(f"Found {len(self.label_encoder.classes_)} unique classes")
+        print("Class mapping:")
+        for i, label in enumerate(self.label_encoder.classes_):
+            print(f"  {i}: {label}")
         
     def __len__(self):
         return len(self.data) 
@@ -72,8 +78,16 @@ class ComplexMedicalDataset(Dataset):
         # Return the original text label
         return {
             "image": image,
-            "text": item['report'] 
+            "label": self.encoded_labels[idx]
         }
+
+    def get_class_mapping(self):
+        """Returns a dictionary mapping numerical labels to their text descriptions"""
+        return {i: label for i, label in enumerate(self.label_encoder.classes_)}
+        
+    def get_num_classes(self):
+        """Returns the total number of unique classes"""
+        return len(self.label_encoder.classes_)
     
 class MyDatamodule(L.LightningDataModule):
     def __init__(self, data_dir: str, transforms: dict, batch_size: int, num_workers: int):
@@ -179,50 +193,48 @@ class MyDatamodule(L.LightningDataModule):
 class VGG16Custom(LightningModule):
     def __init__(
         self, 
-        class_descriptions: list, 
+        num_classes: int,
+        class_mapping: dict,
+
         learning_rate: float = 0.0001,
+        feature_learning_rate: float = 0.00001,
         pretrained: bool = True
     ):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['class_mapping'])
 
-        # Store class descriptions and create label encoder
-        self.class_text = class_descriptions
-        self.label_encoder = LabelEncoder()
-        self.label_encoder.fit(class_descriptions)
+        # Store number of classes
+        self.num_classes = num_classes
+        self.class_mapping = class_mapping
+
+        
+        # Different learning rates for feature extraction and new layers
+        self.learning_rate = learning_rate
+        self.feature_learning_rate = feature_learning_rate
 
         # Model initialization
         self.model = models.vgg16(pretrained=pretrained)
         
-        # Freeze all layers
+        # Unfreeze all layers for fine-tuning
         for param in self.model.parameters():
-            param.requires_grad = False
+            param.requires_grad = True
             
-        # Get feature dimension (last layer before classifier)
-        self.feature_dim = self.model.classifier[-1].in_features
-        
-        # Remove the last classification layer
-        self.model.classifier = self.model.classifier[:-1]
-
-        # Define an index for each class description
-        self.num_classes = len(self.class_text)
-
-        # Simplified classifier without dropout
-        self.classifier = nn.Sequential(
-            nn.Linear(self.feature_dim, self.num_classes)
+        # Modify the classifier
+        self.model.classifier = nn.Sequential(
+            nn.Linear(25088, 4096),
+            nn.ReLU(True),
+            #nn.Dropout(p=0.5),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            #nn.Dropout(p=0.5),
+            nn.Linear(4096, num_classes)
         )
-        # Initialize the new layer
-        nn.init.xavier_uniform_(self.classifier[-1].weight, gain=1.4)
-        nn.init.zeros_(self.classifier[-1].bias)
 
-        # Hyperparameters
-        self.learning_rate = learning_rate
-
-        # Normalization for pretrained VGG16
-        self.normalize = transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+        # Initialize the new classifier layers
+        for m in self.model.classifier.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight, gain=1.4)
+                nn.init.zeros_(m.bias)
 
         # Metrics
         self.accuracy = torchmetrics.classification.Accuracy(
@@ -248,28 +260,18 @@ class VGG16Custom(LightningModule):
         self.metrics_updated = False
 
     def forward(self, x):
-        features = self.model(x)
-        return self.classifier(features)
+        return self.model(x)
+
 
     def _common_step(self, batch, batch_idx):
         # Get batch
-        image, text = batch['image'], batch['text']
+        image, labels = batch['image'], batch['label']
         
         # Normalize images if not already normalized
         if image.max() > 1.0:
             image = image / 255.0
         #image = self.normalize(image)
-        
-        # Convert text labels to indices
-        try:
-            labels = torch.tensor([self.class_text.index(t) for t in text], 
-                                dtype=torch.long,
-                                device=self.device)
-        except ValueError as e:
-            print("Available classes:", self.class_text)
-            print("Received labels:", text)
-            raise ValueError(f"Label mismatch. Make sure all labels in your data are included in class_descriptions. Error: {e}")
-        
+       
         return image, labels
 
     def _log_confusion_matrix(self, stage):
@@ -278,17 +280,27 @@ class VGG16Custom(LightningModule):
             
         conf_matrix = self.confusion_matrix.compute()
         
+        # Get class labels from mapping
+        labels = [self.class_mapping[i] for i in range(self.num_classes)]
+        
         fig = plt.figure(figsize=(10, 8))
         sns.heatmap(
             conf_matrix.cpu().numpy(),
             annot=True,
             fmt='g',
-            xticklabels=self.class_text,
-            yticklabels=self.class_text
+            xticklabels=labels,
+            yticklabels=labels
         )
         plt.xlabel('Predicted')
         plt.ylabel('True')
         plt.title(f'{stage.capitalize()} Confusion Matrix')
+        
+        # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45, ha='right')
+        plt.yticks(rotation=0)
+        
+        # Adjust layout to prevent label cutoff
+        plt.tight_layout()
         
         self.logger.experiment.add_figure(
             f'{stage}_confusion_matrix',
@@ -304,8 +316,11 @@ class VGG16Custom(LightningModule):
         per_class_acc = self.per_class_accuracy.compute()
         f1_scores = self.f1_score.compute()
         
+        # Get class labels from mapping
+        labels = [self.class_mapping[i] for i in range(self.num_classes)]
+        
         fig, ax = plt.subplots(figsize=(12, 6))
-        x = np.arange(len(self.class_text))
+        x = np.arange(len(labels))
         width = 0.35
         
         ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
@@ -314,7 +329,7 @@ class VGG16Custom(LightningModule):
         ax.set_ylabel('Score')
         ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
         ax.set_xticks(x)
-        ax.set_xticklabels(self.class_text, rotation=45, ha='right')
+        ax.set_xticklabels(labels, rotation=45, ha='right')
         ax.legend()
         
         plt.tight_layout()
@@ -327,7 +342,7 @@ class VGG16Custom(LightningModule):
         plt.close()
         
         # Log individual metrics
-        for idx, class_name in enumerate(self.class_text):
+        for idx, class_name in enumerate(labels):
             self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
             self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
 
@@ -471,17 +486,32 @@ class VGG16Custom(LightningModule):
         self.metrics_updated = False
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            params=self.classifier.parameters(),
-            lr=self.learning_rate
-        )
+        # Separate parameter groups for feature extractor and classifier
+        feature_params = []
+        classifier_params = []
+        
+        # Split parameters into feature extractor and classifier groups
+        for name, param in self.model.named_parameters():
+            if "classifier" in name:
+                classifier_params.append(param)
+            else:
+                feature_params.append(param)
+        
+        # Create optimizer with different learning rates
+        optimizer = torch.optim.Adam([
+            {'params': feature_params, 'lr': self.feature_learning_rate},
+            {'params': classifier_params, 'lr': self.learning_rate}
+        ])
+        
+        # Learning rate scheduler
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer=optimizer,
             mode='min',
             factor=0.5,
-            patience=50,
+            patience=5,
             verbose=True
         )
+        
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
@@ -507,15 +537,15 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     transforms_dict = get_transforms()
     
     # Create a temporary dataset to get all unique classes
-    temp_dataset = ComplexMedicalDataset(
+    dataset = ComplexMedicalDataset(
         data_dir=data_dir,
-        train=True,
-        transform=transforms_dict['train']
+        train=True
     )
     
     # Get unique classes from the dataset
-    unique_classes = list(set(item['report'] for item in temp_dataset.data))
-    print(f"Found {len(unique_classes)} unique classes:", unique_classes)
+    num_classes = dataset.get_num_classes()
+    class_mapping = dataset.get_class_mapping()
+
     
     # Initialize datamodule with these transforms
     datamodule = MyDatamodule(
@@ -527,8 +557,10 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     
     # Initialize model with the unique classes
     model = VGG16Custom(
-        class_descriptions=unique_classes,
-        learning_rate=learning_rate
+        num_classes=num_classes,
+        class_mapping=class_mapping,
+        learning_rate=learning_rate,
+        feature_learning_rate=0.00001
     )
     
     # Initialize trainer
@@ -554,10 +586,10 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
 
 if __name__ == "__main__":
     class_descriptions = [
-        "Characterized by scattered areas of pattern density",
         "Fatty predominance",
-        "Extremely dense",
-        "Heterogeneously dense"
+        "Characterized by scattered areas of pattern density",
+        "Heterogeneously dense",
+        "Extremely dense"
     ]
     
     # Setup training components
@@ -588,5 +620,6 @@ if __name__ == "__main__":
     # Save the model
     torch.save(model.state_dict(), 'medical_classifier.pth')
     
- 
+ #######
             
+ 
