@@ -258,7 +258,7 @@ class VGG16Custom(LightningModule):
         # Normalize images if not already normalized
         if image.max() > 1.0:
             image = image / 255.0
-        #image = self.normalize(image)
+        image = self.normalize(image)
         
         # Convert text labels to indices
         try:
@@ -335,12 +335,53 @@ class VGG16Custom(LightningModule):
 
         return loss
 
+    def test_step(self, batch, batch_idx):
+        image, labels = self._common_step(batch, batch_idx)
+        
+        # Compute logits
+        logits = self(image)
+        
+        # Compute loss
+        loss = F.cross_entropy(logits, labels)
+        
+        # Log test metrics
+        self.log(
+            name='test_loss',
+            value=loss,
+            batch_size=image.size(0),
+            on_step=False,
+            on_epoch=True
+        )
+        
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+        self.confusion_matrix.update(_predictions, labels)
+        self.per_class_accuracy.update(_predictions, labels)
+        self.f1_score.update(_predictions, labels)
+        self.metrics_updated = True
+
+        return loss
+
     def on_validation_epoch_end(self):
         if not self.metrics_updated:
             return
             
         acc = self.accuracy.compute()
         self.log('val_acc', acc)
+        
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
+        self.metrics_updated = False
+
+    def on_test_epoch_end(self):
+        if not self.metrics_updated:
+            return
+            
+        acc = self.accuracy.compute()
+        self.log('test_acc', acc)
         
         self.accuracy.reset()
         self.confusion_matrix.reset()
@@ -412,7 +453,7 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     
     # Initialize trainer
     trainer = L.Trainer(
-        max_epochs=100,
+        max_epochs=20,
         accelerator='auto',
         devices=1,
         callbacks=[
