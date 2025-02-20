@@ -258,7 +258,7 @@ class VGG16Custom(LightningModule):
         # Normalize images if not already normalized
         if image.max() > 1.0:
             image = image / 255.0
-        image = self.normalize(image)
+        #image = self.normalize(image)
         
         # Convert text labels to indices
         try:
@@ -271,6 +271,65 @@ class VGG16Custom(LightningModule):
             raise ValueError(f"Label mismatch. Make sure all labels in your data are included in class_descriptions. Error: {e}")
         
         return image, labels
+
+    def _log_confusion_matrix(self, stage):
+        if not self.metrics_updated:
+            return
+            
+        conf_matrix = self.confusion_matrix.compute()
+        
+        fig = plt.figure(figsize=(10, 8))
+        sns.heatmap(
+            conf_matrix.cpu().numpy(),
+            annot=True,
+            fmt='g',
+            xticklabels=self.class_text,
+            yticklabels=self.class_text
+        )
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title(f'{stage.capitalize()} Confusion Matrix')
+        
+        self.logger.experiment.add_figure(
+            f'{stage}_confusion_matrix',
+            fig,
+            self.current_epoch
+        )
+        plt.close()
+
+    def _log_per_class_metrics(self, stage):
+        if not self.metrics_updated:
+            return
+            
+        per_class_acc = self.per_class_accuracy.compute()
+        f1_scores = self.f1_score.compute()
+        
+        fig, ax = plt.subplots(figsize=(12, 6))
+        x = np.arange(len(self.class_text))
+        width = 0.35
+        
+        ax.bar(x - width/2, per_class_acc.cpu(), width, label='Accuracy')
+        ax.bar(x + width/2, f1_scores.cpu(), width, label='F1 Score')
+        
+        ax.set_ylabel('Score')
+        ax.set_title(f'{stage.capitalize()} Per-Class Metrics')
+        ax.set_xticks(x)
+        ax.set_xticklabels(self.class_text, rotation=45, ha='right')
+        ax.legend()
+        
+        plt.tight_layout()
+        
+        self.logger.experiment.add_figure(
+            f'{stage}_per_class_metrics',
+            fig,
+            self.current_epoch
+        )
+        plt.close()
+        
+        # Log individual metrics
+        for idx, class_name in enumerate(self.class_text):
+            self.log(f'{stage}_acc_{class_name}', per_class_acc[idx])
+            self.log(f'{stage}_f1_{class_name}', f1_scores[idx])
 
     def training_step(self, batch, batch_idx):
         image, labels = self._common_step(batch, batch_idx)
@@ -363,12 +422,31 @@ class VGG16Custom(LightningModule):
 
         return loss
 
+    def on_train_epoch_end(self):
+        if not self.metrics_updated:
+            return
+            
+        acc = self.accuracy.compute()
+        self.log('train_acc', acc)
+        
+        self._log_confusion_matrix('train')
+        self._log_per_class_metrics('train')
+        
+        self.accuracy.reset()
+        self.confusion_matrix.reset()
+        self.per_class_accuracy.reset()
+        self.f1_score.reset()
+        self.metrics_updated = False
+
     def on_validation_epoch_end(self):
         if not self.metrics_updated:
             return
             
         acc = self.accuracy.compute()
         self.log('val_acc', acc)
+        
+        self._log_confusion_matrix('val')
+        self._log_per_class_metrics('val')
         
         self.accuracy.reset()
         self.confusion_matrix.reset()
@@ -382,6 +460,9 @@ class VGG16Custom(LightningModule):
             
         acc = self.accuracy.compute()
         self.log('test_acc', acc)
+        
+        self._log_confusion_matrix('test')
+        self._log_per_class_metrics('test')
         
         self.accuracy.reset()
         self.confusion_matrix.reset()
@@ -408,18 +489,7 @@ class VGG16Custom(LightningModule):
                 "monitor": "val_loss"
             }
         }
-  
-def get_transforms():
-    return {
-        'train': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ]),
-        'test': transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ])
-    }
+      
 
 
 def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
@@ -468,7 +538,7 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
                 mode='min'
             )
         ],
-        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm_v2",default_hp_metric=False))
+        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm_v3",default_hp_metric=False))
     
     return trainer, model, datamodule
 
