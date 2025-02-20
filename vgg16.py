@@ -30,7 +30,7 @@ class ComplexMedicalDataset(Dataset):
         self.label_encoder = LabelEncoder()
         
         # Load JSON file
-        json_file = "train.json" if train else "test.json"
+        json_file = "train_balanced.json" if train else "test_balanced.json"
         if not os.path.exists(os.path.join(self.data_dir, json_file)):
             raise FileNotFoundError(f"{json_file} not found in the data directory.")
             
@@ -262,7 +262,7 @@ class VGG16Custom(LightningModule):
         # Normalize images if not already normalized
         if image.max() > 1.0:
             image = image / 255.0
-        image = self.normalize(image)
+        #image = self.normalize(image)
         
         # Convert text labels to indices
         try:
@@ -499,7 +499,7 @@ def get_transforms():
         ])
     }
 
-# Assuming ComplexMedicalDataset is defined elsewhere, here's how to set everything up:
+
 def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     # Initialize transforms
     transforms_dict = get_transforms()
@@ -546,7 +546,7 @@ def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
                 mode='min'
             )
         ],
-        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_unbalanced_no_augmentation_vgg",default_hp_metric=False))
+        logger=L.loggers.TensorBoardLogger(save_dir='logging_tests',name='linear_probe',version = "4_balanced_no_augmentation_vgg_no_norm",default_hp_metric=False))
     
     return trainer, model, datamodule
 
