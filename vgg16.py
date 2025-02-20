@@ -1,33 +1,26 @@
 import os
 import json
-import torch
-import lightning as L
-import pytorch_lightning as L
-import torch.nn as nn
-import numpy as np
 import cv2
-import seaborn as sns
-import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn.functional as F
 import torchmetrics
+import pytorch_lightning as L
+import matplotlib.pyplot as plt
+import seaborn as sns
+from torch import nn
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+from torchvision import transforms, models
 from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.preprocessing import LabelEncoder
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import EarlyStopping
-from pytorch_lightning import LightningModule  # Add this import explicitly
+from pytorch_lightning import LightningModule 
 
 
-import os
-import json
-import cv2
-import numpy as np
-from PIL import Image
-from torch.utils.data import Dataset
-from sklearn.preprocessing import LabelEncoder
 
 class ComplexMedicalDataset(Dataset):
     def __init__(self, data_dir: str, train: bool = True, transform=None):
@@ -36,7 +29,7 @@ class ComplexMedicalDataset(Dataset):
         self.transform = transform
         self.label_encoder = LabelEncoder()
         
-        # Load the appropriate JSON file
+        # Load JSON file
         json_file = "train.json" if train else "test.json"
         if not os.path.exists(os.path.join(self.data_dir, json_file)):
             raise FileNotFoundError(f"{json_file} not found in the data directory.")
@@ -49,8 +42,10 @@ class ComplexMedicalDataset(Dataset):
         self.label_encoder.fit(all_labels)
         
         print(f"Found {len(self.label_encoder.classes_)} unique classes: {self.label_encoder.classes_}")
+        
     def __len__(self):
         return len(self.data) 
+        
     def __getitem__(self, idx: int) -> dict:
         item = self.data[idx]
         
@@ -74,21 +69,21 @@ class ComplexMedicalDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         
-        # Return the original text label instead of encoded version
+        # Return the original text label
         return {
             "image": image,
-            "text": item['report']  # Return original text label
+            "text": item['report'] 
         }
     
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir: str, transforms: dict, batch_size: int = 32, num_workers: int = 1):
+    def __init__(self, data_dir: str, transforms: dict, batch_size: int, num_workers: int):
         super().__init__()
         self.data_dir = data_dir
         self.transforms = transforms
         self.batch_size = batch_size
         self.num_workers = num_workers
         
-        # Initialize datasets as None
+        
         self.train_dataset = None
         self.validation_dataset = None
         self.test_dataset = None
@@ -111,7 +106,6 @@ class MyDatamodule(L.LightningDataModule):
                     train=True,
                     transform=self.transforms['train']
                 )
-                #print(f"Successfully loaded training data with {len(training_data)} samples")
                 
                 # Calculate split sizes
                 total_size = len(training_data)
@@ -181,16 +175,8 @@ class MyDatamodule(L.LightningDataModule):
             num_workers=self.num_workers
         )
 
-def create_model(num_classes=4):
-    # Load pretrained ConvNeXt
-    model = convnext_base(weights=ConvNeXt_Base_Weights.IMAGENET1K_V1)
-    
-    # Modify the classifier
-    model.classifier[2] = nn.Linear(1024, num_classes)
-    
-    return model
 
-class VGG16LinearProbe(LightningModule):
+class VGG16Custom(LightningModule):
     def __init__(
         self, 
         class_descriptions: list, 
@@ -500,27 +486,11 @@ class VGG16LinearProbe(LightningModule):
                 "monitor": "val_loss"
             }
         }
-  
-import os
-import torch
-import pytorch_lightning as L
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from torch import nn
-import torch.nn.functional as F
-from torchvision import models
-import torchmetrics
-from torch.utils.data import DataLoader
 
-# First, let's create some basic transforms
 def get_transforms():
     return {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(10),
             transforms.ToTensor(),
         ]),
         'test': transforms.Compose([
@@ -530,7 +500,7 @@ def get_transforms():
     }
 
 # Assuming ComplexMedicalDataset is defined elsewhere, here's how to set everything up:
-def setup_training(data_dir: str, batch_size: int = 32, learning_rate: float = 0.0001):
+def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     # Initialize transforms
     transforms_dict = get_transforms()
     
@@ -547,13 +517,14 @@ def setup_training(data_dir: str, batch_size: int = 32, learning_rate: float = 0
     
     # Initialize datamodule with these transforms
     datamodule = MyDatamodule(
-        data_dir=data_dir,
-        transforms=transforms_dict,
-        batch_size=batch_size
+        data_dir = data_dir,
+        transforms = transforms_dict,
+        batch_size = batch_size,
+        num_workers = num_workers
     )
     
     # Initialize model with the unique classes
-    model = VGG16LinearProbe(
+    model = VGG16Custom(
         class_descriptions=unique_classes,
         learning_rate=learning_rate
     )
@@ -579,9 +550,7 @@ def setup_training(data_dir: str, batch_size: int = 32, learning_rate: float = 0
     
     return trainer, model, datamodule
 
-# Example usage:
 if __name__ == "__main__":
-    # Define your classes
     class_descriptions = [
         "Characterized by scattered areas of pattern density",
         "Fatty predominance",
@@ -593,8 +562,9 @@ if __name__ == "__main__":
 
     trainer, model, datamodule = setup_training(
         data_dir="/mnt/Pandora/Datasets/MamografiasMex/4kimages/",
-        batch_size=32,
-        learning_rate=0.0001
+        batch_size=64,
+        learning_rate=0.0001, 
+        num_workers=19
     )
    
     
@@ -616,114 +586,5 @@ if __name__ == "__main__":
     # Save the model
     torch.save(model.state_dict(), 'medical_classifier.pth')
     
-    # Optional: Example of loading and using the model for inference
-    def predict_image(model, image_tensor):
-        model.eval()
-        with torch.no_grad():
-            # Ensure image is normalized
-            if image_tensor.max() > 1.0:
-                image_tensor = image_tensor / 255.0
-            image_tensor = model.normalize(image_tensor)
+ 
             
-            # Get prediction
-            logits = model(image_tensor.unsqueeze(0))
-            probabilities = F.softmax(logits, dim=1)
-            predicted_class = torch.argmax(probabilities, dim=1)
-            
-            return {
-                'class': model.class_text[predicted_class.item()],
-                'probabilities': probabilities[0].tolist()
-            }
-"""
-def main():
-    torch.manual_seed(42)
-    
-    # Hyperparameters
-    batch_size = 32
-    num_epochs = 20
-    learning_rate = 1e-4
-    
-    # Define transforms
-    transforms_dict = {
-        'train': transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor()
-        ]),
-        'test': transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor()
-        ])
-    }
-    
-    # Create data module
-    data_module = MyDatamodule(
-        data_dir='/Users/YusMolina/Documents/tesis/biomedCLIP/data/datosMex/images/4kimages',
-        transforms=transforms_dict,
-        batch_size=batch_size,
-        num_workers=4
-    )
-    
-    # Set up the data module
-    data_module.setup()
-    
-    # Get label encoder from training dataset
-    label_encoder = data_module.train_dataset.dataset.get_label_encoder()
-    
-    # Initialize tensorboard logger
-    tensorboard_logger = TensorBoardLogger(
-        save_dir='logs',
-        name='medical_training',
-        default_hp_metric=False
-    )
-
-    early_stop_callback = EarlyStopping(
-            monitor='val_loss',  # quantity to monitor
-            min_delta=0.00,            # minimum change to qualify as an improvement
-            patience=10,               # number of epochs with no improvement after which training will be stopped
-            verbose=True,              # enable verbose mode
-            mode='min'                 # "min" means lower val_loss is better
-        )
-    
-    # Initialize trainer
-    trainer = L.Trainer(
-        max_epochs=num_epochs,
-        accelerator='auto',
-        devices=1,
-        logger=tensorboard_logger,
-        log_every_n_steps=10,
-        callbacks=[early_stop_callback]
-    )
-    
-    # Initialize and train model
-    # Initialize the model
-    model = VGG16LinearProbe(
-        class_descriptions=["Characterized by scattered areas of pattern density",
-        "Fatty predominance",
-        "Extremely dense",
-        "Heterogeneously dense"],
-        learning_rate=0.0001,
-        dropout_rate=0.2
-    )
-
-    # Create trainer and train
-    trainer = L.Trainer(
-        max_epochs=100,
-        accelerator='gpu',
-        devices=1,
-        logger=L.loggers.TensorBoardLogger('logs/')
-    )
-    trainer.fit(model, train_dataloader, val_dataloader)
-
-
-    model = MedicalTrainer(num_classes=4, learning_rate=learning_rate)
-    model.set_label_encoder(label_encoder)
-    trainer.fit(model, data_module)
-    
-    # Final validation
-    trainer.validate(model, data_module)
-
-if __name__ == '__main__':
-    main()
-"""
