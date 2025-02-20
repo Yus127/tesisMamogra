@@ -489,8 +489,18 @@ class VGG16Custom(LightningModule):
                 "monitor": "val_loss"
             }
         }
-      
 
+def get_transforms():
+    return {
+        'train': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+        ]),
+        'test': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+        ])
+    }
 
 def setup_training(data_dir: str, batch_size, learning_rate, num_workers):
     # Initialize transforms
