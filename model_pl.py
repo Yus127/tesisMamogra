@@ -6,7 +6,7 @@ import lightning as L
 
 
 """
-Linear probe, I added a extra layer to clasiffy the images into N categories 
+Linear probe, I added a extra layer to classify the images into N categories 
 """
 class CLIPLinearProbe(L.LightningModule):
     def __init__(
@@ -62,8 +62,8 @@ class CLIPLinearProbe(L.LightningModule):
         
         # Get label index
         labels = (torch.Tensor(len(text))
-                  .type(torch.LongTensor)
-                  .to(self.device)
+                .type(torch.LongTensor)
+                .to(self.device)
         )
         for idx, t in enumerate(text):
             if t not in self.class_text:
@@ -183,4 +183,150 @@ class CLIPLinearProbe(L.LightningModule):
                 "scheduler": scheduler,
                 "monitor": "val_loss"
             }
+        }
+    
+
+"""VGG linear probe"""
+class VGGLinearProbe(L.LightningModule):
+    def __init__(
+        self,  
+        model,
+        n_classes,
+        learning_rate: float = 0.0001
+    ):
+        super().__init__()
+        self.model = model
+        self.learning_rate = learning_rate
+        self.n_classes = n_classes
+
+        # Freeze the model
+        for param in self.model.parameters():
+            param.requires_grad = False
+        
+        # Get the number of features in the model
+        self.feature_dim = self.model.classifier[6].in_features
+        self.classifier = nn.Linear(self.feature_dim, self.n_classes)
+        
+        # Metrics
+        self.accuracy = torchmetrics.classification.Accuracy(
+            task="multiclass", 
+            num_classes=self.num_classes
+        )
+        
+    def _common_step(self, batch, batch_idx):
+        # Get batch
+        image, label = batch['image'], batch['text']
+        
+        # Get label index
+        labels = (torch.Tensor(len(text))
+                .type(torch.LongTensor)
+                .to(self.device)
+        )
+        for idx, t in enumerate(text):
+            if t not in self.class_text:
+                raise ValueError(
+                    f"Class description '{t}' not found in target classes."
+                )
+            labels[idx] = torch.tensor(self.class_text.index(t))
+        
+        return image, labels
+
+    def _evaluate(self, batch, stage=None):
+        image, labels = self._common_step(batch, None)
+        
+        # Compute logits
+        logits = self(image)
+        
+        # Compute loss
+        loss = F.cross_entropy(logits, labels)
+        
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+
+        # Log metrics
+        self.log(
+            name=f'{stage}_loss',
+            value=loss,
+            batch_size=image.size(0)
+        )
+
+    def training_step(self, batch, batch_idx):
+        image, labels = self._common_step(batch, batch_idx)
+        
+        # Compute logits
+        logits = self(image)
+
+        # Compute loss
+        loss = F.cross_entropy(logits, labels, label_smoothing=0.1)
+        if self.l2_lambda > 0.0:
+            l2_norm = sum(
+                torch.sum(param ** 2) 
+                for param in self.classifier.parameters()
+            )
+            loss = loss + self.l2_lambda * l2_norm
+        
+        # Log training metrics
+        self.log(
+            name='train_loss', 
+            value=loss,  
+            batch_size=image.size(0),
+            on_step=False,
+            on_epoch=True
+        )
+        self.log(
+            name='train_batch_loss',
+            value=loss,
+            batch_size=image.size(0),
+            on_step=True,
+            on_epoch=False
+        )
+        
+        # Update metrics
+        _predictions = logits.softmax(dim=-1).argmax(dim=-1)
+        self.accuracy.update(_predictions, labels)
+
+        return loss
+
+    def on_train_epoch_end(self):        
+        # Compute epoch metrics
+        acc = self.accuracy.compute()
+
+        # Reset epoch loss counter
+        self.train_epoch_loss = 0
+        
+        # Log metrics
+        self.log('train_acc', acc)
+
+    def validation_step(self, batch, batch_idx):
+        self._evaluate(batch, stage='val')
+    
+    def on_validation_epoch_end(self):
+        # Compute epoch metrics
+        acc = self.accuracy.compute()
+        # Log metrics
+        self.log('val_acc', acc)
+
+    def test_step(self, batch, batch_idx):
+        self._evaluate(batch, stage='test')
+    
+    def on_test_epoch_end(self):
+        # Compute epoch metrics
+        acc = self.accuracy.compute()
+        # Log metrics
+        self.log('test_acc', acc)
+
+    def forward(self, x):
+        with torch.no_grad():
+            self.model(x)
+        return self.classifier(x)
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(
+            params=self.classifier.parameters(),
+            lr=self.learning_rate
+        )
+        
+        return {
+            "optimizer": optimizer,
         }
