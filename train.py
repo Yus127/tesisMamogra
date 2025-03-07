@@ -44,7 +44,7 @@ early_stop_callback = EarlyStopping(
 logger = TensorBoardLogger(
     save_dir='logging_tests',
     name='linear_probe',
-    version = "4_unbalanced_no_augmentation",
+    version = "4_balanced_no_augmentation_final_v2",
     default_hp_metric=False
 )
 

@@ -465,7 +465,7 @@ def main():
     # Hyperparameters
     batch_size = 64
     num_epochs = 200
-    learning_rate = 1e-5
+    learning_rate = 0.0001
 
     # Define transforms
     transforms_dict = {
@@ -486,7 +486,7 @@ def main():
         data_dir='/mnt/Pandora/Datasets/MamografiasMex/4kimages/',  # data directory        
         transforms=transforms_dict,
         batch_size=batch_size,
-        num_workers=4
+        num_workers=19
     )
 
 
@@ -500,7 +500,7 @@ def main():
     tensorboard_logger = TensorBoardLogger(
         save_dir='logging_tests',
         name='linear_probe',
-        version = "convnext_4_balanced_no_augmentation_v4",
+        version = "convnext_4_balanced_no_augmentation_final",
         default_hp_metric=False
     )
 

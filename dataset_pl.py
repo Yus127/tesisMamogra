@@ -26,15 +26,15 @@ class ComplexMedicalDataset(Dataset):
 
         if train:
             # Check there is a train.json file
-            if not os.path.exists(os.path.join(self.data_dir, "train.json")):
+            if not os.path.exists(os.path.join(self.data_dir, "train_balanced.json")):
                 raise FileNotFoundError("train.json file not found in the data directory.")
-            with open(os.path.join(data_dir, "train.json"), 'r') as f:
+            with open(os.path.join(data_dir, "train_balanced.json"), 'r') as f:
                 self.data = json.load(f)
         else:
             # Check there is a test.json file
-            if not os.path.exists(os.path.join(self.data_dir, "test.json")):
+            if not os.path.exists(os.path.join(self.data_dir, "test_balanced.json")):
                 raise FileNotFoundError("test.json file not found in the data directory.")
-            with open(os.path.join(data_dir, "test.json"), 'r') as f:
+            with open(os.path.join(data_dir, "test_balanced.json"), 'r') as f:
                 self.data = json.load(f)
 
     def __len__(self):
@@ -60,7 +60,7 @@ class ComplexMedicalDataset(Dataset):
 
 
 class MyDatamodule(L.LightningDataModule):
-    def __init__(self, data_dir:str, transforms:dict, batch_size:int=32, num_workers:int=1):
+    def __init__(self, data_dir:str, transforms:dict, batch_size:int, num_workers:int):
         super(MyDatamodule, self).__init__()
 
         # Dataset info
@@ -83,7 +83,7 @@ class MyDatamodule(L.LightningDataModule):
                 transform=self.transforms['train']
             )
             # Split training data into training and validation
-            self.train_dataset, self.validation_dataset = torch.utils.data.random_split(training_data, [0.8, 0.2])
+            self.train_dataset, self.validation_dataset = torch.utils.data.random_split(training_data, [0.85, 0.15])
         except FileNotFoundError as e:
             print(e)
             print("Skipping training data.")
