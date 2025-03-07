@@ -53,26 +53,23 @@ class CLIPLinearProbe(L.LightningModule):
         self.l2_lambda = l2_lambda
 
         # Metrics
-        self.accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass", 
-            num_classes=self.num_classes
-        )
-        self.confusion_matrix = torchmetrics.classification.ConfusionMatrix(
-            task="multiclass",
-            num_classes=self.num_classes
-        )
-        # Per-class accuracy metrics
-        self.per_class_accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass",
-            num_classes=self.num_classes,
-            average=None
-        )
-        # F1 Score per class
-        self.f1_score = torchmetrics.classification.F1Score(
-            task="multiclass",
-            num_classes=self.num_classes,
-            average=None
-        )
+        # Training metrics
+        self.train_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes)
+        self.train_confusion_matrix = torchmetrics.classification.ConfusionMatrix(task="multiclass", num_classes=self.num_classes)
+        self.train_per_class_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes, average=None)
+        self.train_f1_score = torchmetrics.classification.F1Score(task="multiclass", num_classes=self.num_classes, average=None)
+        
+        # Validation metrics
+        self.val_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes)
+        self.val_confusion_matrix = torchmetrics.classification.ConfusionMatrix(task="multiclass", num_classes=self.num_classes)
+        self.val_per_class_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes, average=None)
+        self.val_f1_score = torchmetrics.classification.F1Score(task="multiclass", num_classes=self.num_classes, average=None)
+        
+        # Test metrics
+        self.test_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes)
+        self.test_confusion_matrix = torchmetrics.classification.ConfusionMatrix(task="multiclass", num_classes=self.num_classes)
+        self.test_per_class_accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=self.num_classes, average=None)
+        self.test_f1_score = torchmetrics.classification.F1Score(task="multiclass", num_classes=self.num_classes, average=None)
 
         self.metrics_updated = False
 
@@ -103,13 +100,18 @@ class CLIPLinearProbe(L.LightningModule):
         # Compute loss
         loss = F.cross_entropy(logits, labels)
         
-        # Update metrics
+        # Update metrics based on stage
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
-        self.confusion_matrix.update(_predictions, labels)
-        self.per_class_accuracy.update(_predictions, labels)
-        self.f1_score.update(_predictions, labels)
-        self.metrics_updated = True
+        if stage == 'val':
+            self.val_accuracy.update(_predictions, labels)
+            self.val_confusion_matrix.update(_predictions, labels)
+            self.val_per_class_accuracy.update(_predictions, labels)
+            self.val_f1_score.update(_predictions, labels)
+        elif stage == 'test':
+            self.test_accuracy.update(_predictions, labels)
+            self.test_confusion_matrix.update(_predictions, labels)
+            self.test_per_class_accuracy.update(_predictions, labels)
+            self.test_f1_score.update(_predictions, labels)
 
         # Log metrics
         self.log(
@@ -135,10 +137,10 @@ class CLIPLinearProbe(L.LightningModule):
         
         # Update metrics
         _predictions = logits.softmax(dim=-1).argmax(dim=-1)
-        self.accuracy.update(_predictions, labels)
-        self.confusion_matrix.update(_predictions, labels)
-        self.per_class_accuracy.update(_predictions, labels)
-        self.f1_score.update(_predictions, labels)
+        self.train_accuracy.update(_predictions, labels)
+        self.train_confusion_matrix.update(_predictions, labels)
+        self.train_per_class_accuracy.update(_predictions, labels)
+        self.train_f1_score.update(_predictions, labels)
         self.metrics_updated = True
 
          # Log the accuracy for the current batch
@@ -167,8 +169,14 @@ class CLIPLinearProbe(L.LightningModule):
     def _log_confusion_matrix(self, stage):
         if not self.metrics_updated:
             return
-        # Compute confusion matrix
-        conf_matrix = self.confusion_matrix.compute()
+       if stage == 'train':
+            conf_matrix = self.train_confusion_matrix.compute()
+        elif stage == 'val':
+            conf_matrix = self.val_confusion_matrix.compute()
+        elif stage == 'test':
+            conf_matrix = self.test_confusion_matrix.compute()
+        else:
+            return
         
         # Convert class indices to class names for better interpretability
         fig = plt.figure(figsize=(10, 8))
@@ -195,9 +203,18 @@ class CLIPLinearProbe(L.LightningModule):
         if not self.metrics_updated:
             return
 
-        # Compute per-class metrics
-        per_class_acc = self.per_class_accuracy.compute()
-        f1_scores = self.f1_score.compute()
+        # Get appropriate metrics based on stage
+        if stage == 'train':
+            per_class_acc = self.train_per_class_accuracy.compute()
+            f1_scores = self.train_f1_score.compute()
+        elif stage == 'val':
+            per_class_acc = self.val_per_class_accuracy.compute()
+            f1_scores = self.val_f1_score.compute()
+        elif stage == 'test':
+            per_class_acc = self.test_per_class_accuracy.compute()
+            f1_scores = self.test_f1_score.compute()
+        else:
+            return
         
         # Create a bar plot comparing accuracy and F1 score for each class
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -242,26 +259,20 @@ class CLIPLinearProbe(L.LightningModule):
             return
 
         # Compute epoch metrics
-        acc = self.accuracy.compute()
-
-         # Log metrics
-        self.log('train_acc_epoch', acc, sync_dist=True, prog_bar=True)
-
+        acc = self.train_accuracy.compute()
+    
         # Log metrics
-        #self.log('train_acc', acc)
+        self.log('train_acc_epoch', acc, sync_dist=True, prog_bar=True)
         
         # Log confusion matrix and per-class metrics
         self._log_confusion_matrix('train')
         self._log_per_class_metrics('train')
         
-        # Reset epoch loss counter
-        self.train_epoch_loss = 0
-        
-        # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
+        # Reset train metrics
+        self.train_accuracy.reset()
+        self.train_confusion_matrix.reset()
+        self.train_per_class_accuracy.reset()
+        self.train_f1_score.reset()
         self.metrics_updated = False
 
     def validation_step(self, batch, batch_idx):
@@ -272,7 +283,7 @@ class CLIPLinearProbe(L.LightningModule):
             return
             
         # Compute epoch metrics
-        acc = self.accuracy.compute()
+        acc = self.val_accuracy.compute()
         
         # Log metrics
         self.log('val_acc', acc, sync_dist=True, prog_bar=True)
@@ -281,11 +292,11 @@ class CLIPLinearProbe(L.LightningModule):
         self._log_confusion_matrix('val')
         self._log_per_class_metrics('val')
         
-        # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
+        # Reset validation metrics
+        self.val_accuracy.reset()
+        self.val_confusion_matrix.reset()
+        self.val_per_class_accuracy.reset()
+        self.val_f1_score.reset()
         self.metrics_updated = False
     
     def test_step(self, batch, batch_idx):
@@ -296,7 +307,7 @@ class CLIPLinearProbe(L.LightningModule):
             return
 
         # Compute epoch metrics
-        acc = self.accuracy.compute()
+        acc = self.test_accuracy.compute()
         
         # Log metrics
         self.log('test_acc', acc)
@@ -305,11 +316,11 @@ class CLIPLinearProbe(L.LightningModule):
         self._log_confusion_matrix('test')
         self._log_per_class_metrics('test')
         
-        # Reset metrics
-        self.accuracy.reset()
-        self.confusion_matrix.reset()
-        self.per_class_accuracy.reset()
-        self.f1_score.reset()
+        # Reset test metrics
+        self.test_accuracy.reset()
+        self.test_confusion_matrix.reset()
+        self.test_per_class_accuracy.reset()
+        self.test_f1_score.reset()
         self.metrics_updated = False
 
     def forward(self, x):
