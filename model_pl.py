@@ -169,7 +169,7 @@ class CLIPLinearProbe(L.LightningModule):
     def _log_confusion_matrix(self, stage):
         if not self.metrics_updated:
             return
-       if stage == 'train':
+        if stage == 'train':
             conf_matrix = self.train_confusion_matrix.compute()
         elif stage == 'val':
             conf_matrix = self.val_confusion_matrix.compute()
