@@ -21,8 +21,7 @@ class_descriptions = [
     "Characterized by scattered areas of pattern density",
     "Fatty predominance",
     "Extremely dense",
-    "Heterogeneously dense",
-    "Moderately dense"
+    "Heterogeneously dense"
     ]
 
 linear_probe = CLIPLinearProbe(
@@ -37,7 +36,7 @@ linear_probe = CLIPLinearProbe(
 early_stop_callback = EarlyStopping(
         monitor='val_loss',  # quantity to monitor
         min_delta=0.00,            # minimum change to qualify as an improvement
-        patience=50,               # number of epochs with no improvement after which training will be stopped
+        patience=10,               # number of epochs with no improvement after which training will be stopped
         verbose=True,              # enable verbose mode
         mode='min'                 # "min" means lower val_loss is better
     )
@@ -45,6 +44,7 @@ early_stop_callback = EarlyStopping(
 logger = TensorBoardLogger(
     save_dir='logging_tests',
     name='linear_probe',
+    version = "4_balanced_no_augmentation_final_v2",
     default_hp_metric=False
 )
 
@@ -60,10 +60,10 @@ trainer = L.Trainer(
 
 train_transform = T.Compose([
         transforms.ToTensor(),
-        transforms.Resize((224, 224)),
-        T.RandomVerticalFlip(p=0.5),
-        T.RandomRotation(10),
-        T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
+        transforms.Resize((224, 224))#,
+        #T.RandomVerticalFlip(p=0.5),
+        #T.RandomRotation(10),
+        #T.RandomAffine(degrees=(1,10), translate=(0.1, 0.1), scale=(0.9, 1.1))
     ])
 
 test_transform = T.Compose([
