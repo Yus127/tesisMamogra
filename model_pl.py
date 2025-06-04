@@ -8,7 +8,7 @@ import seaborn as sns
 import numpy as np
 
 """
-Linear probe, I added a extra layer to clasiffy the images into N categories 
+Linear probe, I added a extra layer to classify the images into N categories 
 """
 class CLIPLinearProbe(L.LightningModule):
     def __init__(
@@ -79,8 +79,8 @@ class CLIPLinearProbe(L.LightningModule):
         
         # Get label index
         labels = (torch.Tensor(len(text))
-                  .type(torch.LongTensor)
-                  .to(self.device)
+                .type(torch.LongTensor)
+                .to(self.device)
         )
         for idx, t in enumerate(text):
             if t not in self.class_text:
@@ -349,3 +349,4 @@ class CLIPLinearProbe(L.LightningModule):
                 "monitor": "val_loss"
             }
         }
+
