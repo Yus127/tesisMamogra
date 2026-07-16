@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/YusMolina/Downloads/reimagina/alivestreets-main/src/alivestreets/sampling/**)",
+      "Read(//Users/YusMolina/Downloads/reimagina/alivestreets-main/src/alivestreets/streetview/**)",
+      "Read(//Users/YusMolina/Downloads/reimagina/alivestreets-main/src/alivestreets/vision/**)",
+      "Read(//Users/YusMolina/Downloads/reimagina/alivestreets-main/src/alivestreets/utils/**)"
+    ]
+  }
+}
