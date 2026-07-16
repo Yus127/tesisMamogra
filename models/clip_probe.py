@@ -1,13 +1,4 @@
-"""
-Linear probe classifier on top of a frozen BioMedCLIP encoder for breast
-density classification. Only the final linear layer is trained.
-
-Training Strategy:
-    - Linear probing: BioMedCLIP encoder weights are frozen
-    - AdamW optimizer with weight decay
-    - ReduceLROnPlateau scheduler
-    - Early stopping based on validation loss
-"""
+"""BioMedCLIP linear probe for breast density classification."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -20,8 +11,8 @@ import numpy as np
 
 class CLIPLinearProbe(L.LightningModule):
     """
-    Input Image → [Frozen BioMedCLIP Encoder] → Embeddings
-    → [Trainable Linear Layer] → Class Logits
+    Frozen BioMedCLIP encoder → trainable linear classifier.
+    Only the final linear layer accumulates gradients.
     """
 
     def __init__(

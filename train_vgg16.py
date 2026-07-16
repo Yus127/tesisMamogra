@@ -1,8 +1,4 @@
-"""
-Training script for VGG16 fine-tuning on breast density classification.
-
-Full fine-tuning with differential learning rates for feature extractor
-and classifier head.
+"""VGG16 fine-tuning — differential lr for feature extractor vs. classifier head.
 
 Usage: python train_vgg16.py
 """

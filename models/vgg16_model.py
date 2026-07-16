@@ -1,10 +1,4 @@
-"""
-VGG16 fine-tuning model for breast density classification.
-
-Full fine-tuning with differential learning rates:
-    - Feature extractor (conv layers): lower lr
-    - Classifier head: higher lr
-"""
+"""VGG16 fine-tuning for breast density classification."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,12 +11,7 @@ from torchvision import models
 
 
 class VGG16Classifier(L.LightningModule):
-    """
-    Fine-tuned VGG16 for multiclass breast density classification.
-
-    All layers are unfrozen; the original classifier is replaced with a
-    custom head sized to num_classes.
-    """
+    """Differential learning rates: lower lr for conv layers, higher for the classifier head."""
 
     def __init__(
         self,

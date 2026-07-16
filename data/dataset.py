@@ -1,22 +1,3 @@
-"""
-Custom dataset and PyTorch Lightning DataModule for loading mammographic images
-paired with radiology reports. Handles:
-    - Loading images and text from JSON metadata files
-    - Applying transformations and augmentations
-    - Splitting data into train/validation/test sets
-    - Creating efficient DataLoaders with parallel workers
-
-Dataset Structure:
-    The expected JSON format contains image paths and corresponding radiology reports:
-    [
-        {
-            "filename": "S0018466_2016_LMLO.tif",
-            "report": "Heterogeneously dense",
-            "image_path": "4kimages/S0018466_2016_LMLO.tif"
-        },
-        ...
-    ]
-"""
 import json
 import os
 
@@ -31,10 +12,6 @@ import matplotlib.pyplot as plt
 
 
 class ComplexMedicalDataset(Dataset):
-    """
-    Loads mammography images along with their corresponding textual density reports
-    from JSON metadata files (train.json / test.json).
-    """
 
     def __init__(self, data_dir: str, train: bool = True, transform=None):
         super(ComplexMedicalDataset, self).__init__()
@@ -45,10 +22,7 @@ class ComplexMedicalDataset(Dataset):
         json_path = os.path.join(self.data_dir, json_file)
 
         if not os.path.exists(json_path):
-            raise FileNotFoundError(
-                f"{json_file} not found in {self.data_dir}. "
-                f"Expected path: {json_path}"
-            )
+            raise FileNotFoundError(f"{json_file} not found in {self.data_dir}. Expected path: {json_path}")
 
         with open(json_path, 'r') as f:
             self.data = json.load(f)
@@ -59,27 +33,21 @@ class ComplexMedicalDataset(Dataset):
     def __getitem__(self, idx: int) -> dict:
         item = self.data[idx]
 
-        image_path = item["filename"]
-        image = cv2.imread(os.path.join(self.data_dir, image_path))
+        image = cv2.imread(os.path.join(self.data_dir, item["filename"]))
         if image is None:
-            raise FileNotFoundError(f"Image not found at {os.path.join(self.data_dir, image_path)}")
+            raise FileNotFoundError(f"Image not found at {os.path.join(self.data_dir, item['filename'])}")
 
-        # Convert BGR (OpenCV default) to RGB expected by all pretrained models
+        # cv2 loads BGR; all pretrained models expect RGB
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.transform:
             image = self.transform(image)
 
-        text = item['report']
-
-        return {"image": image, "text": text}
+        return {"image": image, "text": item['report']}
 
 
 class MyDatamodule(L.LightningDataModule):
-    """
-    Handles train.json and test.json loading, 85/15 train/val split,
-    and DataLoader creation.
-    """
+    """85/15 train/val split from train.json; test.json for final evaluation."""
 
     def __init__(self, data_dir: str, transforms: dict, batch_size: int = 32, num_workers: int = 1):
         super(MyDatamodule, self).__init__()
@@ -131,8 +99,6 @@ class MyDatamodule(L.LightningDataModule):
         return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
 
 
-# ── quick smoke tests ─────────────────────────────────────────────────────────
-
 def _test_ComplexMedicalDataset():
     train_transform = transforms.Compose([
         transforms.ToTensor(),
@@ -140,10 +106,9 @@ def _test_ComplexMedicalDataset():
     ])
     dataset = ComplexMedicalDataset(data_dir=config.DATA_DIR, transform=train_transform)
     first_item = dataset.__getitem__(0)
-    print(f"First item shape: {first_item['image'].shape}")
+    print(f"shape: {first_item['image'].shape}, text: {first_item['text']}")
     plt.imshow(first_item['image'].squeeze().permute(1, 2, 0))
     plt.show()
-    print(first_item['text'])
 
 
 def _test_MyDatamodule():
@@ -164,9 +129,8 @@ def _test_MyDatamodule():
             print(f"No {split} dataset found.")
         else:
             item = ds.__getitem__(0)
-            print(f"{split} item shape: {item['image'].shape}, text: {item['text']}")
+            print(f"{split} — shape: {item['image'].shape}, text: {item['text']}")
 
 
 if __name__ == "__main__":
     _test_MyDatamodule()
-    print("All tests passed!")

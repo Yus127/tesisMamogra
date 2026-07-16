@@ -1,8 +1,4 @@
-"""
-Training script for BioMedCLIP Linear Probing on breast density classification.
-
-Frozen BioMedCLIP encoder + trainable linear classification head.
-Only the final linear layer is trained (linear probing).
+"""BioMedCLIP linear probing — frozen encoder + trainable linear head.
 
 Usage: python train_clip.py
 """
@@ -20,16 +16,13 @@ from data.dataset import MyDatamodule
 
 
 def run_main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.set_float32_matmul_precision('medium')
 
-    # Load BioMedCLIP pretrained on 15M PubMed image-text pairs
     model, preprocess = create_model_from_pretrained(
         'hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224'
     )
 
-    # BI-RADS density categories
-    # Note: includes an experimental 5th class; published paper uses only 4
+    # Paper uses 4 standard BI-RADS classes; 5th class is experimental
     class_descriptions = [
         "Characterized by scattered areas of pattern density",
         "Fatty predominance",

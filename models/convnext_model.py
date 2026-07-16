@@ -1,9 +1,4 @@
-"""
-ConvNeXt-Base fine-tuning model for breast density classification.
-
-Full fine-tuning with ImageNet pretrained weights; only the final
-classifier head is replaced to match num_classes.
-"""
+"""ConvNeXt-Base fine-tuning for breast density classification."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,9 +11,6 @@ from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 
 
 class ConvNeXtClassifier(L.LightningModule):
-    """
-    Fine-tuned ConvNeXt-Base for multiclass breast density classification.
-    """
 
     def __init__(self, class_descriptions: list, learning_rate: float = 0.0001):
         super().__init__()

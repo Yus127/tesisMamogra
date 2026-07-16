@@ -1,7 +1,4 @@
-"""
-Training script for ConvNeXt-Base fine-tuning on breast density classification.
-
-Full fine-tuning from ImageNet pretrained weights.
+"""ConvNeXt-Base fine-tuning from ImageNet weights.
 
 Usage: python train_convnext.py
 """
